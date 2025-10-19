@@ -266,7 +266,7 @@ namespace Yaml2Docx
                     ),
 
                     // literal text "Table "
-                    new Run(new Text("Table ")), // normally done by Word
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
 
                     // --- Bookmark around the SEQ field only ---
                     new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
@@ -305,8 +305,18 @@ namespace Yaml2Docx
             // Really appending the table
             body.Append(table);
 
+            // Notes
+            if (opConfig?.Notes != null)
+            {
+                // add notes per default at the end of the table
+                foreach (var note in opConfig.Notes)
+                    body.AppendChild(CreateParagraph(
+                        $"NOTE   {note}",
+                        styleId: $"{_config.NoteStyle}"));
+            }
+
             // empty rows
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 1; i++)
                 body.AppendChild(CreateParagraph(""));
         }        
 
@@ -345,26 +355,23 @@ namespace Yaml2Docx
 
                             // process the first part as a Run
                             var first = rest.Substring(0, i);
-                            p.Append(new Run(new Text(first)));
+                            p.Append(new Run(new Text(first) { Space = SpaceProcessingModeValues.Preserve }));
 
                             // add the placeholder value
                             if (!sub.isBookmark)
                             {
                                 // just add a Run
-                                p.Append(new Run(new Text(sub.Value)));
+                                p.Append(new Run(new Text(sub.Value) { Space = SpaceProcessingModeValues.Preserve }));
                             }
                             else
                             {
                                 // add a bookmark reference
                                 p.Append(
-                                    new Run(
-                                        new Text("See "),
-                                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                                    new Run(new FieldChar() { FieldCharType = FieldCharValues.Begin }),
                                     new Run(new FieldCode($" REF {sub.Value} \\h ")),
                                     new Run(new FieldChar() { FieldCharType = FieldCharValues.Separate }),
                                     new Run(new Text("1")),  // placeholder, updated by Word
-                                    new FieldChar() { FieldCharType = FieldCharValues.End },
-                                    new Run(new Text(" for details."))
+                                    new FieldChar() { FieldCharType = FieldCharValues.End }
                                 );
                             }
 
@@ -378,7 +385,7 @@ namespace Yaml2Docx
                     // if not found, eat up the rest
                     if (!found)
                     {
-                        p.Append(new Run(new Text(rest)));
+                        p.Append(new Run(new Text(rest) { Space = SpaceProcessingModeValues.Preserve }));
                         break;
                     }
                 }

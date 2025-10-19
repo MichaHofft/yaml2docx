@@ -9,10 +9,15 @@ namespace Yaml2Docx
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            // Welcome
+            Console.WriteLine("Welcome to the over-engineered IEC63278-5 OpenAPI document text generator.");
+            Console.WriteLine("(c) 2025 by Michael Hoffmeister, HKA");
+
+            // Play YAML?
             //var pg = new YamlPlayground();
             //pg.Run();
 
+            // load configuration
             var config = YamlConfig.Load("..\\..\\..\\..\\..\\yaml2docx_config.yaml");
             var wp = new ExportIecInterfaceOperation(config);
 
@@ -67,7 +72,7 @@ namespace Yaml2Docx
                     }
 
                     // list styles
-                    if (true)
+                    if (wfn.ListStyles)
                     {
                         ExportIecInterfaceOperation.ListStyleNames(mainPart, prefix: "  ");
                     }

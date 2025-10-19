@@ -91,6 +91,8 @@ namespace Yaml2Docx
 
             public string? Explanation;
 
+            public List<string>? Notes;
+
             public ParameterInfoList Inputs = new();
             public ParameterInfoList Outputs = new();
 
@@ -105,7 +107,7 @@ namespace Yaml2Docx
             public string? Heading2Text;
             public string? Body2Text;
 
-            public bool ListOperations = true;
+            public bool ListOperations = false;
             
             public Dictionary<string, OperationConfig> ExportOperations = new();
         }
@@ -114,6 +116,8 @@ namespace Yaml2Docx
         {
             public string Fn = "TBD.docx";
             public string? UseTemplateFn;
+
+            public bool ListStyles = false;
 
             public List<ReadOpenApiFile> ReadOpenApiFiles = new();
         }
@@ -126,6 +130,7 @@ namespace Yaml2Docx
             public string Heading2Style = "Normal";
             public string Heading3Style = "Normal";
             public string BodyStyle = "Normal";
+            public string NoteStyle = "Normal";
             public string TableCaptionStyle = "Normal";
 
             public List<double>? TableColumnWidthCm;
