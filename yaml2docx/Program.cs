@@ -99,26 +99,71 @@ namespace Yaml2Docx
                             lst.ListOperationIds(doc, prefix: "    ");
                         }
 
-                        // level 2 headings
-                        wp.ExportHeading2Data(mainPart, rof);
-
-                        // Export operations
-                        foreach (var opEntry in rof.ExportOperations)
+                        // over actions
+                        foreach (var act in rof.Actions)
                         {
-                            // access, log
-                            var operationId = opEntry.Key;
-                            var opConfig = opEntry.Value;
-                            Console.WriteLine($"    Exporting operation: {operationId}");
-                            var operation = doc.FindApiOperation(operationId);
-                            if (operation == null)
+                            var actName = act.Action.Trim().ToLower();
+                            if (actName == "exportpara")
                             {
-                                Console.WriteLine($"      ERROR: Could not find operation: {operationId}");
+                                wp.ExportParagraph(mainPart, act.ParaText, act.ParaStyle);
+                            }
+                            else
+                            if (actName == "exporttables")
+                            {
+                                // Export operations
+                                foreach (var opEntry in rof.UseOperations)
+                                {
+                                    // access for one operation, log
+                                    var operationId = opEntry.Key;
+                                    var opConfig = opEntry.Value;
+                                    Console.WriteLine($"    Exporting operation: {operationId}");
+                                    var operation = doc.FindApiOperation(operationId);
+                                    if (operation == null)
+                                    {
+                                        Console.WriteLine($"      ERROR: Could not find operation: {operationId}");
+                                        continue;
+                                    }
+
+                                    // do
+                                    wp.ExportSingleOperation(mainPart, opConfig, operation);
+                                }
+                            }
+                            if (actName == "exportoverview")
+                            {
+                                // make a list of annotated operations
+                                var listOfOps = new List<ExportIecInterfaceOperation.OperationTuple>();
+                                int nOK = 0, nNOK = 0;
+                                foreach (var opEntry in rof.UseOperations)
+                                {
+                                    var op = doc.FindApiOperation(opEntry.Key);
+                                    if (op != null)
+                                    {
+                                        listOfOps.Add(new ExportIecInterfaceOperation.OperationTuple(opEntry.Value, op));
+                                        nOK++;
+                                    }
+                                    else
+                                        nNOK++;
+
+                                }
+                                
+                                // log
+                                Console.WriteLine($"      Create OVERVIEW on {nOK} operations, {nNOK} not found!");
+
+                                // do
+                                wp.ExportOverviewOperation(mainPart, listOfOps);
+                            }
+                            else
+                            {
+                                // unknown action!
+                                Console.WriteLine($"    ERROR: Unknown action {act.Action}!");
                                 continue;
                             }
-
-                            // do
-                            wp.ExportSingleOperation(mainPart, opConfig, operation);
                         }
+
+                        // level 2 headings
+                        // wp.ExportHeading2Data(mainPart, rof);
+
+                        
                     }
 
                     // Finalize document

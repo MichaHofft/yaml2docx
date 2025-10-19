@@ -44,6 +44,29 @@ namespace Yaml2Docx
                     styleId: $"{_config.BodyStyle}"));
         }
 
+        public void ExportParagraph(
+            MainDocumentPart mainPart,
+            string? text,
+            string? style)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // generate a table-reference to the last table WITHOUT creating NEW TABLE
+            var substs = new List<Substitution>() {
+                new Substitution("table-ref", $"Table{_tableRefIdCount}", isBookmark: true)
+            };
+
+            // ok
+            if (text != null)
+                body.AppendChild(CreateParagraph(
+                    $"{text}",
+                    styleId: $"{style ?? "Normal"}",
+                    substitutions: substs));
+        }
+
         /// <summary>
         /// Substitution for doing variable replacement in paragraphs
         /// </summary>
@@ -51,6 +74,11 @@ namespace Yaml2Docx
 
         protected static int _tableRefIdCount = 13;
 
+        public record OperationTuple (YamlConfig.OperationConfig Config, YamlOpenApi.OpenApiOperation Operation);
+
+        /// <summary>
+        /// Export a single operation to the Word
+        /// </summary>
         public void ExportSingleOperation(
             MainDocumentPart mainPart,
             YamlConfig.OperationConfig opConfig,
@@ -62,7 +90,7 @@ namespace Yaml2Docx
                 return;
 
             // generate a table-reference
-            var substTablRef = new Substitution("table-ref", $"IfcOpTable{_tableRefIdCount++}", isBookmark: true);
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
             var substs = new List<Substitution>() { substTablRef };
 
             // Heading
@@ -161,7 +189,7 @@ namespace Yaml2Docx
             int[] cw = { (int)(3 * cm), (int)(6 * cm), (int)(1 * cm), (int)(4 * cm), (int)(1 * cm) };
 
             if (_config.TableColumnWidthCm != null && _config.TableColumnWidthCm.Count >= 5)
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < Math.Min(5, _config.TableColumnWidthCm.Count); i++)
                     cw[i] = (int)(cm * _config.TableColumnWidthCm[i]);
 
             TableGrid tableGrid = new TableGrid();
@@ -316,9 +344,130 @@ namespace Yaml2Docx
             }
 
             // empty rows
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
                 body.AppendChild(CreateParagraph(""));
-        }        
+        }
+
+        /// <summary>
+        /// Export a single operation to the Word
+        /// </summary>
+        public void ExportOverviewOperation(
+            MainDocumentPart mainPart,
+            List<ExportIecInterfaceOperation.OperationTuple> opTuples)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+
+            // Create the table
+            Table table = new Table();
+
+            // Define table properties (1 pt border, full width)
+            TableProperties tblProps = new TableProperties(
+                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }, // 100% width (5000 = 100% in OpenXML)
+                new TableLayout { Type = TableLayoutValues.Fixed }, // <=== FIXED LAYOUT
+                new TableBorders(
+                    new TopBorder { Val = BorderValues.Single, Size = 8 },
+                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
+                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
+                    new RightBorder { Val = BorderValues.Single, Size = 8 },
+                    new InsideHorizontalBorder { Val = BorderValues.Single, Size = 8 },
+                    new InsideVerticalBorder { Val = BorderValues.Single, Size = 8 }
+                )
+            );
+            table.AppendChild(tblProps);
+
+            // Define column widths (sum ~9360 twips = ~6.5 inches)
+            double cm = 567;
+            int[] cw = { (int)(3 * cm), (int)(6 * cm) };
+
+            if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
+                for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
+                    cw[i] = (int)(cm * _config.OverviewColumnWidthCm[i]);
+
+            TableGrid tableGrid = new TableGrid();
+            foreach (int width in cw)
+            {
+                tableGrid.Append(new GridColumn() { Width = width.ToString() });
+            }
+            table.Append(tableGrid);
+
+            // 1st row: Header 
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("Interface operation name", cw[0], bold: true));
+                tr.Append(CreateCell("Description", cw[1], bold: true));
+                table.Append(tr);
+            }
+
+            // 2nd.. row: Data
+            foreach (var opT in opTuples)
+            {
+                var explanation = opT.Config.Explanation ?? opT.Operation.Summary;
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell($"{opT.Operation.OperationId}", cw[0]));
+                tr.Append(CreateCell($"{explanation}", cw[1]));
+                table.Append(tr);
+            }
+
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – Overview on interface operations")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // Really appending the table
+            body.Append(table);
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+        }
 
         //
         // Helpers for OpenXML / Word

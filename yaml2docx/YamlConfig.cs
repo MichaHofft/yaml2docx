@@ -100,6 +100,17 @@ namespace Yaml2Docx
             public List<string> SuppressOutputs = new();
         }
 
+        public class ExportAction
+        {
+            /// <summary>
+            /// ExportPara, ExportOverview, ExportTables
+            /// </summary>
+            public string Action = "";
+
+            public string? ParaText;
+            public string? ParaStyle;
+        }
+
         public class ReadOpenApiFile
         {
             public string Fn = "TBD.yaml";
@@ -108,8 +119,10 @@ namespace Yaml2Docx
             public string? Body2Text;
 
             public bool ListOperations = false;
+
+            public List<ExportAction> Actions = new();
             
-            public Dictionary<string, OperationConfig> ExportOperations = new();
+            public Dictionary<string, OperationConfig> UseOperations = new();
         }
 
         public class CreateWordFile
@@ -133,7 +146,10 @@ namespace Yaml2Docx
             public string NoteStyle = "Normal";
             public string TableCaptionStyle = "Normal";
 
+            public int NumberEmptyLines = 1;
+
             public List<double>? TableColumnWidthCm;
+            public List<double>? OverviewColumnWidthCm;
 
             public bool AddTableCaptions = true;
 
