@@ -215,6 +215,15 @@ namespace Yaml2Docx
                 if (Post != null) yield return Post;
                 if (Delete != null) yield return Delete;
             }
+
+            public IEnumerable<Tuple<string, OpenApiOperation>> FullOperations()
+            {
+                if (Get != null) yield return new Tuple<string, OpenApiOperation>("Get", Get);
+                if (Put != null) yield return new Tuple<string, OpenApiOperation>("Put", Put);
+                if (Patch != null) yield return new Tuple<string, OpenApiOperation>("Patch", Patch);
+                if (Post != null) yield return new Tuple<string, OpenApiOperation>("Post", Post);
+                if (Delete != null) yield return new Tuple<string, OpenApiOperation>("Delete", Delete);
+            }
         }
 
         public class OpenApiComponents
@@ -235,6 +244,22 @@ namespace Yaml2Docx
 
             public List<OpenApiServer>? Servers;
             public Dictionary<string, OpenApiPath>? Paths;
+
+            public OpenApiOperation? FindApiOperation(string operationId)
+            {
+                if (Paths == null) 
+                    return null;
+                foreach (var pathEntry in Paths)
+                {
+                    var path = pathEntry.Value;
+                    foreach (var operation in path.Operations())
+                    {
+                        if (operation.OperationId == operationId)
+                            return operation;
+                    }
+                }
+                return null;
+            }
         }
 
         public static OpenApiDocument Load(string fn)

@@ -10,6 +10,8 @@ namespace Yaml2Docx
             //var pg = new YamlPlayground();
             //pg.Run();
 
+            var config = YamlConfig.Load("..\\..\\..\\..\\..\\yaml2docx_config.yaml");
+
             // var doc = YamlOpenApi.Load("..\\..\\..\\..\\..\\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-unresolved.yaml");
             var doc = YamlOpenApi.Load("..\\..\\..\\..\\..\\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml");
 
@@ -21,7 +23,7 @@ namespace Yaml2Docx
             Console.WriteLine("Listing operation ids:");
             lst.ListOperationIds(doc);
 
-            var wp = new ExportIecInterfaceOperation();
+            var wp = new ExportIecInterfaceOperation(config);
             wp.Export(doc, "..\\..\\..\\..\\..\\test2.docx");
         }
     }
