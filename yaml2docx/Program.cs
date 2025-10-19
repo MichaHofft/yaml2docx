@@ -18,27 +18,58 @@ namespace Yaml2Docx
 
             foreach (var wfn in config.CreateWordFiles)
             {
-                // Create
-                Console.WriteLine($"Will create Word file: {wfn.Fn}");
+                // Create or template
+                var useTemplate = (wfn.UseTemplateFn != null);
+                if (useTemplate && wfn.UseTemplateFn != null)
+                {
+                    Console.WriteLine($"Copying Word template file: {wfn.UseTemplateFn} to: {wfn.Fn}");
+                    System.IO.File.Copy(wfn.UseTemplateFn, wfn.Fn, overwrite: true);
+                }
+                else
+                {
+                    Console.WriteLine($"Will create Word file: {wfn.Fn}");
+                }
 
                 // Create Document
-                using (var wordDoc = WordprocessingDocument.Create(wfn.Fn, WordprocessingDocumentType.Document, true))
+                using (var wordDoc = useTemplate 
+                                ? WordprocessingDocument.Open(wfn.Fn, true)
+                                : WordprocessingDocument.Create(wfn.Fn, WordprocessingDocumentType.Document, true))
                 {
-                    var mainPart = wordDoc?.AddMainDocumentPart();
-
-                    if (mainPart == null)
+                    MainDocumentPart? mainPart = null;
+                    if (!useTemplate)
                     {
-                        Console.WriteLine($"  ERROR: Could not create Word file body for: {wfn.Fn}");
-                        continue;
+                        mainPart = wordDoc?.AddMainDocumentPart();
+
+                        if (mainPart == null)
+                        {
+                            Console.WriteLine($"  ERROR: Could not create Word file body for: {wfn.Fn}");
+                            continue;
+                        }
+
+                        mainPart.Document = new Document(new Body());
+
+                        // Ensure the Styles part exists and add the default Word styles
+                        if (mainPart.StyleDefinitionsPart == null)
+                        {
+                            var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
+                            ExportIecInterfaceOperation.GenerateDefaultStyles(stylePart);
+                        }
+                    } 
+                    else
+                    {
+                        mainPart = wordDoc.MainDocumentPart;
+
+                        if (mainPart == null)
+                        {
+                            Console.WriteLine($"  ERROR: Could not template Word file body for: {wfn.Fn}");
+                            continue;
+                        }
                     }
 
-                    mainPart.Document = new Document(new Body());
-
-                    // Ensure the Styles part exists and add the default Word styles
-                    if (mainPart.StyleDefinitionsPart == null)
+                    // list styles
+                    if (true)
                     {
-                        var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
-                        ExportIecInterfaceOperation.GenerateDefaultStyles(stylePart);
+                        ExportIecInterfaceOperation.ListStyleNames(mainPart, prefix: "  ");
                     }
 
                     // different API files?
@@ -62,6 +93,9 @@ namespace Yaml2Docx
                             Console.WriteLine($"    Listing operation ids:");
                             lst.ListOperationIds(doc, prefix: "    ");
                         }
+
+                        // level 2 headings
+                        wp.ExportHeading2Data(mainPart, rof);
 
                         // Export operations
                         foreach (var opEntry in rof.ExportOperations)

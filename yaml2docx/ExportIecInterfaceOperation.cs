@@ -22,6 +22,35 @@ namespace Yaml2Docx
             _config = config;
         }
 
+        public void ExportHeading2Data(
+            MainDocumentPart mainPart,
+            YamlConfig.ReadOpenApiFile cfg)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // Heading
+            if (cfg?.Heading2Text != null)
+                body.AppendChild(CreateParagraph(
+                    $"{cfg.Heading2Text}",
+                    styleId: $"{_config.Heading2Style}"));
+
+            // Intro text
+            if (cfg?.Body2Text != null)
+                body.AppendChild(CreateParagraph(
+                    $"{cfg.Body2Text}",
+                    styleId: $"{_config.BodyStyle}"));
+        }
+
+        /// <summary>
+        /// Substitution for doing variable replacement in paragraphs
+        /// </summary>
+        public record Substitution(string Key, string Value, bool isBookmark = false);
+
+        protected static int _tableRefIdCount = 13;
+
         public void ExportSingleOperation(
             MainDocumentPart mainPart,
             YamlConfig.OperationConfig opConfig,
@@ -32,15 +61,20 @@ namespace Yaml2Docx
             if (body == null)
                 return;
 
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"IfcOpTable{_tableRefIdCount++}", isBookmark: true);
+            var substs = new List<Substitution>() { substTablRef };
+
             // Heading
             body.AppendChild(CreateParagraph(
-                $"{opConfig?.Heading ?? _config.Heading} {op.OperationId}",
-                styleId: $"{_config.HeadingStyle}"));
+                $"{opConfig?.Heading ?? _config.Heading3} {op.OperationId}",
+                styleId: $"{_config.Heading3Style}"));
 
             // Intro text
             body.AppendChild(CreateParagraph(
                 $"{opConfig?.Body ?? _config.Body}",
-                styleId: $"{_config.BodyStyle}"));
+                styleId: $"{_config.BodyStyle}",
+                substitutions: substs));
 
             // Create input, output parameters
             YamlConfig.ParameterInfoList inputs = new();
@@ -125,6 +159,10 @@ namespace Yaml2Docx
             // Define column widths (sum ~9360 twips = ~6.5 inches)
             double cm = 567;
             int[] cw = { (int)(3 * cm), (int)(6 * cm), (int)(1 * cm), (int)(4 * cm), (int)(1 * cm) };
+
+            if (_config.TableColumnWidthCm != null && _config.TableColumnWidthCm.Count >= 5)
+                for (int i = 0; i < 5; i++)
+                    cw[i] = (int)(cm * _config.TableColumnWidthCm[i]);
 
             TableGrid tableGrid = new TableGrid();
             foreach (int width in cw)
@@ -224,9 +262,15 @@ namespace Yaml2Docx
                 // Caption paragraph
                 Paragraph caption = new Paragraph(
                     new ParagraphProperties(
-                        new ParagraphStyleId { Val = "Caption" },
-                        new Justification { Val = JustificationValues.Left }
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
                     ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ")), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+                    
                     new Run(
                         new FieldChar() { FieldCharType = FieldCharValues.Begin }),
                     new Run(
@@ -237,8 +281,22 @@ namespace Yaml2Docx
                     new Run(new Text("1")), // placeholder; updated by Word
                     new Run(
                         new FieldChar() { FieldCharType = FieldCharValues.End }),
-                    new Run(new Text($": Interface operation {op?.OperationId}"))
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – Interface operation {op?.OperationId}") { 
+                        Space = SpaceProcessingModeValues.Preserve 
+                    })
+                    
                 );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
 
                 // Append to the body
                 body.Append(caption);
@@ -250,24 +308,6 @@ namespace Yaml2Docx
             // empty rows
             for (int i = 0; i < 3; i++)
                 body.AppendChild(CreateParagraph(""));
-        }
-
-        public MainDocumentPart? CreateWordFile(string fn)
-        {
-            // Create Document
-            var wordDoc = WordprocessingDocument.Create(fn, WordprocessingDocumentType.Document, true);
-            MainDocumentPart mainPart = wordDoc.AddMainDocumentPart();
-            mainPart.Document = new Document(new Body());
-
-            // Ensure the Styles part exists and add the default Word styles
-            if (mainPart.StyleDefinitionsPart == null)
-            {
-                var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
-                GenerateDefaultStyles(stylePart);
-            }
-
-            // ok
-            return mainPart;
         }        
 
         //
@@ -276,7 +316,8 @@ namespace Yaml2Docx
 
         static Paragraph CreateParagraph (
             string text,
-            string? styleId = null)
+            string? styleId = null,
+            List<Substitution>? substitutions = null)
         {
             var p = new Paragraph();
 
@@ -286,7 +327,67 @@ namespace Yaml2Docx
                 p.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = styleId };
             }
 
-            p.Append(new Run(new Text(text)));
+            // chunk apart the text
+            var rest = text;
+            if (substitutions != null)
+            {
+                while (rest.Length > 0)
+                {
+                    // check if there is a placeholder
+                    var found = false;
+                    foreach (var sub in substitutions)
+                    {
+                        var i = rest.IndexOf($"%{sub.Key}%");
+                        if (i >= 0)
+                        {
+                            // found
+                            found = true;
+
+                            // process the first part as a Run
+                            var first = rest.Substring(0, i);
+                            p.Append(new Run(new Text(first)));
+
+                            // add the placeholder value
+                            if (!sub.isBookmark)
+                            {
+                                // just add a Run
+                                p.Append(new Run(new Text(sub.Value)));
+                            }
+                            else
+                            {
+                                // add a bookmark reference
+                                p.Append(
+                                    new Run(
+                                        new Text("See "),
+                                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                                    new Run(new FieldCode($" REF {sub.Value} \\h ")),
+                                    new Run(new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                                    new Run(new Text("1")),  // placeholder, updated by Word
+                                    new FieldChar() { FieldCharType = FieldCharValues.End },
+                                    new Run(new Text(" for details."))
+                                );
+                            }
+
+                            // let the rest by the rest after the placeholder
+                            rest = rest.Substring(i + 2 + sub.Key.Length);
+
+                            break;
+                        }
+                    }
+
+                    // if not found, eat up the rest
+                    if (!found)
+                    {
+                        p.Append(new Run(new Text(rest)));
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // just one Run
+                p.Append(new Run(new Text(text)));
+            }
 
             return p;
         }
@@ -378,6 +479,29 @@ namespace Yaml2Docx
             cell.Append(cellProps);
             cell.Append(paragraph);
             return cell;
+        }
+
+        public static void ListStyleNames(MainDocumentPart? mainPart, string prefix = "")
+        {
+            var stylesPart = mainPart?.StyleDefinitionsPart;
+            if (stylesPart?.Styles == null)
+            {
+                Console.WriteLine($"{prefix}No styles found in the document.");
+                return;
+            }
+
+            var styles = stylesPart.Styles.Elements<Style>();
+
+            Console.WriteLine($"{prefix}Found {styles.Count()} styles.");
+
+            foreach (var style in styles)
+            {
+                string styleId = style.StyleId?.ToString() ?? "(no ID)";
+                string name = style.StyleName?.Val?.ToString() ?? "(no name)";
+                string type = style.Type?.ToString() ?? "(no type)";
+
+                Console.WriteLine($"{styleId,-30} | {name,-40} | {type}");
+            }
         }
 
         public static void GenerateDefaultStyles(StyleDefinitionsPart stylePart)

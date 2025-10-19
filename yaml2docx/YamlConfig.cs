@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-
 namespace Yaml2Docx
 {
     /// <summary>
@@ -103,6 +102,9 @@ namespace Yaml2Docx
         {
             public string Fn = "TBD.yaml";
 
+            public string? Heading2Text;
+            public string? Body2Text;
+
             public bool ListOperations = true;
             
             public Dictionary<string, OperationConfig> ExportOperations = new();
@@ -111,17 +113,22 @@ namespace Yaml2Docx
         public class CreateWordFile
         {
             public string Fn = "TBD.docx";
+            public string? UseTemplateFn;
 
             public List<ReadOpenApiFile> ReadOpenApiFiles = new();
         }
 
         public class ExportConfig
         {
-            public string Heading = "TBD";
+            public string Heading3 = "TBD";
             public string Body = "TBD";
 
-            public string HeadingStyle = "Normal";
+            public string Heading2Style = "Normal";
+            public string Heading3Style = "Normal";
             public string BodyStyle = "Normal";
+            public string TableCaptionStyle = "Normal";
+
+            public List<double>? TableColumnWidthCm;
 
             public bool AddTableCaptions = true;
 
