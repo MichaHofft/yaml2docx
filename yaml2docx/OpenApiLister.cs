@@ -11,14 +11,14 @@ namespace Yaml2Docx
     /// </summary>
     public class OpenApiLister
     {
-        public void ListPathes(YamlOpenApi.OpenApiDocument doc)
+        public void ListPathes(YamlOpenApi.OpenApiDocument doc, string prefix = "")
         {
             if (doc.Paths == null) return;
             foreach (var pathEntry in doc.Paths)
             {
                 var pathKey = pathEntry.Key;
                 var path = pathEntry.Value;
-                Console.Write($"Path: {pathKey} ");
+                Console.Write($"{prefix}Path: {pathKey} ");
                 if (path.Get != null) Console.Write(" [GET]");
                 if (path.Put != null) Console.Write(" [PUT]");
                 if (path.Patch != null) Console.Write(" [PATCH]");
@@ -28,7 +28,7 @@ namespace Yaml2Docx
             }
         }
 
-        public void ListOperationIds(YamlOpenApi.OpenApiDocument doc)
+        public void ListOperationIds(YamlOpenApi.OpenApiDocument doc, string prefix = "")
         {
             if (doc.Paths == null) return;
             foreach (var pathEntry in doc.Paths)
@@ -36,7 +36,7 @@ namespace Yaml2Docx
                 var pathKey = pathEntry.Key;
                 var path = pathEntry.Value;
                 foreach (var operation in path.Operations())
-                    Console.WriteLine($"- {operation.OperationId}");
+                    Console.WriteLine($"{prefix}- {operation.OperationId}");
             }
         }
     }

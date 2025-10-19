@@ -23,10 +23,15 @@ namespace Yaml2Docx
         }
 
         public void ExportSingleOperation(
-            Body body,
+            MainDocumentPart mainPart,
             YamlConfig.OperationConfig opConfig,
             YamlOpenApi.OpenApiOperation op)
-        {           
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
             // Heading
             body.AppendChild(CreateParagraph(
                 $"{opConfig?.Heading ?? _config.Heading} {op.OperationId}",
@@ -136,7 +141,7 @@ namespace Yaml2Docx
             {
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell("Interface Operation Name ", cw[0]));
-                tr.Append(CreateMergedCell($"{op.OperationId}", true, cw[1], bold: true));
+                tr.Append(CreateMergedCell($"{op?.OperationId}", true, cw[1], bold: true));
                 tr.Append(CreateMergedCell("", false, cw[2]));
                 tr.Append(CreateMergedCell("", false, cw[3]));
                 tr.Append(CreateMergedCell("", false, cw[4]));
@@ -213,6 +218,33 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = "Caption" },
+                        new Justification { Val = JustificationValues.Left }
+                    ),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+                    new Run(new Text($": Interface operation {op?.OperationId}"))
+                );
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // Really appending the table
             body.Append(table);
 
             // empty rows
@@ -220,40 +252,23 @@ namespace Yaml2Docx
                 body.AppendChild(CreateParagraph(""));
         }
 
-        public void Export(YamlOpenApi.OpenApiDocument doc,
-            string fn)
+        public MainDocumentPart? CreateWordFile(string fn)
         {
             // Create Document
-            using (WordprocessingDocument wordDoc =
-                WordprocessingDocument.Create(fn, WordprocessingDocumentType.Document, true))
+            var wordDoc = WordprocessingDocument.Create(fn, WordprocessingDocumentType.Document, true);
+            MainDocumentPart mainPart = wordDoc.AddMainDocumentPart();
+            mainPart.Document = new Document(new Body());
+
+            // Ensure the Styles part exists and add the default Word styles
+            if (mainPart.StyleDefinitionsPart == null)
             {
-                MainDocumentPart mainPart = wordDoc.AddMainDocumentPart();
-                mainPart.Document = new Document(new Body());
-                Body? body = mainPart.Document.Body;
-                if (body == null)
-                    return;
-
-                // Ensure the Styles part exists and add the default Word styles
-                if (mainPart.StyleDefinitionsPart == null)
-                {
-                    var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
-                    GenerateDefaultStyles(stylePart);
-                }
-
-                foreach (var op in _config.Operations)
-                {
-                    // find operation to export
-                    var operation = doc.FindApiOperation(op.Key);
-                    if (operation == null)
-                        continue;
-                    // test
-                    ExportSingleOperation(body, op.Value, operation);
-                }
-
-                // Finalize document
-                mainPart.Document.Save();
+                var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
+                GenerateDefaultStyles(stylePart);
             }
-        }
+
+            // ok
+            return mainPart;
+        }        
 
         //
         // Helpers for OpenXML / Word
@@ -365,7 +380,7 @@ namespace Yaml2Docx
             return cell;
         }
 
-        static void GenerateDefaultStyles(StyleDefinitionsPart stylePart)
+        public static void GenerateDefaultStyles(StyleDefinitionsPart stylePart)
         {
             Styles styles = new Styles();
 

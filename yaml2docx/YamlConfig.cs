@@ -99,6 +99,22 @@ namespace Yaml2Docx
             public List<string> SuppressOutputs = new();
         }
 
+        public class ReadOpenApiFile
+        {
+            public string Fn = "TBD.yaml";
+
+            public bool ListOperations = true;
+            
+            public Dictionary<string, OperationConfig> ExportOperations = new();
+        }
+
+        public class CreateWordFile
+        {
+            public string Fn = "TBD.docx";
+
+            public List<ReadOpenApiFile> ReadOpenApiFiles = new();
+        }
+
         public class ExportConfig
         {
             public string Heading = "TBD";
@@ -107,13 +123,15 @@ namespace Yaml2Docx
             public string HeadingStyle = "Normal";
             public string BodyStyle = "Normal";
 
+            public bool AddTableCaptions = true;
+
             public ParameterInfoList Inputs = new();
             public ParameterInfoList Outputs = new();
 
             public List<string> SuppressInputs = new();
             public List<string> SuppressOutputs = new();
-
-            public Dictionary<string, OperationConfig> Operations = new();
+            
+            public List<CreateWordFile> CreateWordFiles = new();
         }
 
         public static ExportConfig Load(string fn)

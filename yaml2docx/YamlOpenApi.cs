@@ -262,7 +262,7 @@ namespace Yaml2Docx
             }
         }
 
-        public static OpenApiDocument Load(string fn)
+        public static OpenApiDocument? Load(string fn)
         {
             var yml = System.IO.File.ReadAllText(fn);
             var deserializer = new DeserializerBuilder()
