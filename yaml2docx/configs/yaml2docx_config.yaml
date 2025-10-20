@@ -1,5 +1,5 @@
 tableHeadingPrefix: Interface operation 
-tableHeadingStyle: berschrift3
+tableHeadingStyle: berschrift4
 noteStyle: NOTE
 tableCaptionStyle: TABLE-title
 yamlHeadingStyle: berschrift3
@@ -151,10 +151,16 @@ createWordFiles:
       paraText: These interface operations make it possible to access the elements of Submodels, which are each an Identifiable entity. The format of the tables in this section are described in Annex A.
       paraStyle: Normal
     - action: ExportPara
-      paraText: Overview
+      paraText: Interface operations w.r.t. to overall Submodel structure
       paraStyle: berschrift3
     - action: ExportPara
-      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraText: These interface operations make it possible to access Submodels as a whole, not targeting specific SubmodelElements. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
@@ -172,6 +178,33 @@ createWordFiles:
       PostSubmodelElement:
         body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the root level of the Submodel.
       # TODO: End file, restart with new text sections
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Interface operations w.r.t. adding file content
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: SubmodelElements of subclass File allow adding information, which is represented by separate file content and is of purpose information (see IEC 63278-2). AAS user applications access these contents.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: EXAMPLE   A handbook of a machine in PDF format is stored and retrieved as file content by AAS user application such as maintenance software.
+      paraStyle: EXAMPLE
+    - action: ExportPara
+      paraText: The interface operations in this subsection concern about the storage and retrieval of such file content with respect to File elements within a Submodel.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations:
       GetFileByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS user related file representation as a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath. 
       PutFileByPath:
