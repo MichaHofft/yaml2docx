@@ -29,7 +29,10 @@ createWordFiles:
   listStyles: true
   readOpenApiFiles:
   #
-  # First list of files for the tables
+  # First pass: List of files for the tables
+  #
+  #
+  # AAS interface
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     listOperations: false
@@ -133,7 +136,82 @@ createWordFiles:
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
   #
+  # Submodel interface
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Submodel interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: These interface operations make it possible to access the elements of Submodels, which are each an Identifiable entity. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations:
+      GetSubmodelById:
+        body: The interface operation described in Table %table-ref% allows to request for a specific Submodel based on the provided Submodel identifier. 
+      PatchSubmodelById:
+        body: The interface operation described in Table %table-ref% allows to update a specific Submodel identified by a Submodel identifier. 
+      PutSubmodelById:
+        body: The interface operation described in Table %table-ref% allows to replace a specific Submodel identified by a Submodel identifier.
+      DeleteSubmodelById:
+        body: The interface operation described in Table %table-ref% allows to remove a specific Submodel identified by a Submodel identifier.
+      GetAllSubmodelElements:
+        body: The interface operation described in Table %table-ref% allows to request for a specific Submodel and its (hierarchical) elements based on a provided Submodel identifier.
+      PostSubmodelElement:
+        body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the root level of the Submodel.
+      # TODO: End file, restart with new text sections
+      GetFileByPath:
+        body: The interface operation described in Table %table-ref% allows to request for a specific AAS user related file representation as a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath. 
+      PutFileByPath:
+        body: The interface operation described in Table %table-ref% allows to set or update a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.
+      DeleteFileByPath:
+        body: The interface operation described in Table %table-ref% allows to remove a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.  
+      # TODO: End file, restart with new text sections
+      GetSubmodelElementByPath:
+        body: The interface operation described in Table %table-ref% allows to request for a specific element based on a provided Submodel identifier and IdShortPath.
+      PostSubmodelElementByPath:
+        body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the provided shortId path within the Submodel.
+        notes:
+        - If the PostSubmodelElementByPath is executed towards a SubmodelElementList, the new SubmodelElement is added to the end of the list. 
+      PutSubmodelElementByPath:
+        body: The interface operation described in Table %table-ref% allows to replace a SubmodelElement at the provided shortId path within a specific Submodel. 
+      PatchSubmodelElementValueByPath:
+        body: The interface operation described in Table %table-ref% allows to update a SubmodelElement at the provided shortId path within a specific Submodel. 
+      DeleteSubmodelElementByPath:
+        body: The operation described in Table %table-ref% allows to delete a SubmodelElement at the provided shortId path within a specific Submodel.
+      # TODO IDTA OpenAPI files: Schema of operationIds is inconsistent
+      GetSubmodelElementByPath-ValueOnly:
+        body: The interface operation described in Table %table-ref% allows to retrieve the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
+      # TODO IDTA OpenAPI files: Schema of operationIds is inconsistent
+      PatchSubmodelElementValueByPathValueOnly:
+        body: The interface operation described in Table %table-ref% allows to update the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
+      # TODO: End file, restart with new text sections
+      InvokeOperationSync:
+        body: The interface operation described in Table %table-ref% allows to execute a syncronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
+      InvokeOperationAsync:
+        body: The interface operation described in Table %table-ref% allows to execute an asynchronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
+      GetOperationAsyncStatus:
+        body: The interface operation described in Table %table-ref% allows to request the status of an executed asynchronous operation represented by an Operation element of a specific Submodel and a provided operation handler, which was provided when the asynchronous operation was called.
+      GetOperationAsyncResult:
+        body: The interface operation describe in Table %table-ref% allows to request the result of a completed, executed asynchronous operation represented by an Operation element of a specific Submodel and provided operation handler, which was provided when the asynchronous operation was called. 
+  #
   # Second pass of the files for YAML
+  #
+  #
+  #
+  # AAS interface
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     listOperations: false
