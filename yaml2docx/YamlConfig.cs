@@ -103,7 +103,7 @@ namespace Yaml2Docx
         public class ExportAction
         {
             /// <summary>
-            /// ExportPara, ExportOverview, ExportTables
+            /// ExportPara, ExportOverview, ExportTables, ExportYaml
             /// </summary>
             public string Action = "";
 
@@ -145,6 +145,7 @@ namespace Yaml2Docx
             public string BodyStyle = "Normal";
             public string NoteStyle = "Normal";
             public string TableCaptionStyle = "Normal";
+            public string YamlCodeStyle = "Normal";
 
             public int NumberEmptyLines = 1;
 

@@ -128,6 +128,7 @@ namespace Yaml2Docx
                                     wp.ExportSingleOperation(mainPart, opConfig, operation);
                                 }
                             }
+                            else
                             if (actName == "exportoverview")
                             {
                                 // make a list of annotated operations
@@ -145,12 +146,33 @@ namespace Yaml2Docx
                                         nNOK++;
 
                                 }
-                                
+
                                 // log
                                 Console.WriteLine($"      Create OVERVIEW on {nOK} operations, {nNOK} not found!");
 
                                 // do
                                 wp.ExportOverviewOperation(mainPart, listOfOps);
+                            }
+                            else
+                            if (actName == "exportyaml")
+                            {
+                                // Export operations
+                                foreach (var opEntry in rof.UseOperations)
+                                {
+                                    // access for one operation, log
+                                    var operationId = opEntry.Key;
+                                    var opConfig = opEntry.Value;
+                                    Console.WriteLine($"    Exporting operation: {operationId}");
+                                    var operation = doc.FindApiOperation(operationId);
+                                    if (operation == null)
+                                    {
+                                        Console.WriteLine($"      ERROR: Could not find operation: {operationId}");
+                                        continue;
+                                    }
+
+                                    // do
+                                    wp.ExportSingleYamlCode(mainPart, opConfig, operation);
+                                }
                             }
                             else
                             {

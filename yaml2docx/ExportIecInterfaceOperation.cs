@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using YamlDotNet.Core;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Yaml2Docx
 {
@@ -469,6 +472,76 @@ namespace Yaml2Docx
                 body.AppendChild(CreateParagraph(""));
         }
 
+        //public class EmptyListOmittingConverter : IYamlTypeConverter
+        //{
+        //    public bool Accepts(Type type)
+        //    {
+        //        return typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string);
+        //    }
+
+        //    public object ReadYaml(IParser parser, Type type)
+        //    {
+        //        throw new NotImplementedException(); // only used for serialization
+        //    }
+
+        //    public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
+        //    {
+        //        throw new NotImplementedException();
+        //    }
+
+        //    public void WriteYaml(IEmitter emitter, object? value, Type type)
+        //    {
+        //        if (value is IEnumerable enumerable)
+        //        {
+        //            bool hasElements = enumerable.Cast<object?>().Any();
+        //            if (hasElements)
+        //            {
+        //                var serializer = new SerializerBuilder().Build();
+        //                serializer.Serialize(emitter, value);
+        //            }
+        //        }
+        //    }
+
+        //    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
+        //    {
+        //        throw new NotImplementedException();
+        //    }
+        //}
+
+
+        /// <summary>
+        /// Export a single operation to the Word
+        /// </summary>
+        public void ExportSingleYamlCode(
+            MainDocumentPart mainPart,
+            YamlConfig.OperationConfig opConfig,
+            YamlOpenApi.OpenApiOperation op)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // serialize YAML
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults) // omit default/null
+                .Build();
+            var yaml = serializer.Serialize(op);
+
+            // build lines
+            var lines = yaml.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // paragraphs
+            var paras = CreateMonospacedParagraph(lines.ToList(), styleId: _config.YamlCodeStyle, isBoxed: true);
+            body.Append(paras);
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+
+        }
+
         //
         // Helpers for OpenXML / Word
         // 
@@ -546,6 +619,61 @@ namespace Yaml2Docx
             }
 
             return p;
+        }
+
+        static List<Paragraph> CreateMonospacedParagraph(
+            List<string> lines,
+            string? styleId = null,
+            bool isBoxed = false)
+        {
+            // try choose one Paragraph with multiple Runs
+            var firstPara = new Paragraph();
+
+            // Add optional style (e.g., "Normal", "CodeBlock", etc.)
+            ParagraphProperties pPr = new ParagraphProperties();
+            if (!string.IsNullOrEmpty(styleId))
+                pPr.Append(new ParagraphStyleId() { Val = styleId });
+
+            // Optional: add paragraph borders if boxed
+            if (isBoxed)
+            {
+                ParagraphBorders borders = new ParagraphBorders(
+                    new TopBorder() { Val = BorderValues.Single, Size = 8 },
+                    new BottomBorder() { Val = BorderValues.Single, Size = 8 },
+                    new LeftBorder() { Val = BorderValues.Single, Size = 8 },
+                    new RightBorder() { Val = BorderValues.Single, Size = 8 }
+                );
+                pPr.Append(borders);
+
+                // Optional spacing inside (acts like padding)
+                pPr.Append(new SpacingBetweenLines()
+                {
+                    Before = "120", // 6pt top space
+                    After = "120"   // 6pt bottom space
+                });
+                pPr.Append(new Indentation() { Left = "0", Right = "0" });
+            }
+
+            firstPara.ParagraphProperties = pPr;
+
+            // fill content
+            foreach (var line in lines)
+            {
+                // Add font + size formatting
+                Run run = new Run();
+                RunProperties runProps = new RunProperties(
+                    new RunFonts { Ascii = "CourierNew", HighAnsi = "CourierNew" },
+                    new FontSize { Val = "16" } // 8 pt
+                );
+
+                run.Append(runProps);
+                run.Append(new Text(line ?? "") { Space = SpaceProcessingModeValues.Preserve });
+                run.Append(new Break());
+
+                firstPara.Append(run);
+            }
+
+            return new List<Paragraph>(new[] { firstPara });
         }
 
         static TableCell CreateCell(string text, int width, bool bold = false)
