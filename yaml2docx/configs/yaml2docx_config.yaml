@@ -212,6 +212,30 @@ createWordFiles:
       DeleteFileByPath:
         body: The interface operation described in Table %table-ref% allows to remove a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.  
       # TODO: End file, restart with new text sections
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Interface operations w.r.t. nested SubmodelElements
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: Within a Submodel, SubmodelElements are hierarchically structure, e.g. by the use of SubmodelElementCollection (see IEC 63278-2). The interface operations in this subsection concern about accessing such SubmodelElements. To specifically address such SubmodelElements, a reference to the Submodel is given together with a list of IdShort identifiers, which one after the other denote the path from the Submodel to the subordinate SubmodelElements. This list of IdShort identifiers is named IdShortPath. 
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: EXAMPLE   See IEC 63278-2 for examples on references. For the reference “(Submodel)https://example.com/aas/1/1/1234859590, (SubmodelElementList)Documents, (SubmodelElementCollection)0, (MultiLanguageProperty)Title”, the IdShortPath is “Documents.0.Title”.
+      paraStyle: EXAMPLE
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations:
       GetSubmodelElementByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific element based on a provided Submodel identifier and IdShortPath.
       PostSubmodelElementByPath:
@@ -231,6 +255,36 @@ createWordFiles:
       PatchSubmodelElementValueByPathValueOnly:
         body: The interface operation described in Table %table-ref% allows to update the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
       # TODO: End file, restart with new text sections
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Interface operations w.r.t. Operation elements
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: This subsection concerns about Operation elements, which are a subtype of SubmodelElement and represented within an Submodel. For such Operation elements, the start of synchronous and asynchronous operations is possible. For asynchronous operations, dedicated interface operations for retrieval of status and results are described.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: NOTE 1  For general description of Operation element, see IEC 63278-2.
+      paraStyle: NOTE
+    - action: ExportPara
+      paraText: NOTE 2  Synchronous operations wait that one operation will complete, before another operation is invoked. The interface operation will return an operation result.
+      paraStyle: NOTE
+    - action: ExportPara
+      paraText: NOTE 3  Asynchronous operations are executed out of time coincidence with its completion; instead of an result, an handle to retrieve status and results are returned. 
+      paraStyle: NOTE
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift4
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations:
       InvokeOperationSync:
         body: The interface operation described in Table %table-ref% allows to execute a syncronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
       InvokeOperationAsync:
