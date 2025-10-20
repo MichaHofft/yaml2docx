@@ -18,7 +18,7 @@ namespace Yaml2Docx
             //pg.Run();
 
             // load configuration
-            var config = YamlConfig.Load("..\\..\\..\\..\\..\\yaml2docx_config.yaml");
+            var config = YamlConfig.Load(".\\configs\\yaml2docx_config.yaml");
             var wp = new ExportIecInterfaceOperation(config);
 
             foreach (var wfn in config.CreateWordFiles)
@@ -181,11 +181,6 @@ namespace Yaml2Docx
                                 continue;
                             }
                         }
-
-                        // level 2 headings
-                        // wp.ExportHeading2Data(mainPart, rof);
-
-                        
                     }
 
                     // Finalize document

@@ -115,9 +115,6 @@ namespace Yaml2Docx
         {
             public string Fn = "TBD.yaml";
 
-            public string? Heading2Text;
-            public string? Body2Text;
-
             public bool ListOperations = false;
 
             public List<ExportAction> Actions = new();
@@ -137,15 +134,19 @@ namespace Yaml2Docx
 
         public class ExportConfig
         {
-            public string Heading3 = "TBD";
+            public string TableHeadingPrefix = "TBD";
             public string Body = "TBD";
 
             public string Heading2Style = "Normal";
-            public string Heading3Style = "Normal";
+            public string TableHeadingStyle = "Normal";
             public string BodyStyle = "Normal";
             public string NoteStyle = "Normal";
             public string TableCaptionStyle = "Normal";
+            public string YamlHeadingStyle = "Normal";
             public string YamlCodeStyle = "Normal";
+
+            public uint TableCellBorderWidth = 8;
+            public uint YamlMonoBorderWidth = 8;
 
             public int NumberEmptyLines = 1;
 

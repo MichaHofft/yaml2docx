@@ -1,0 +1,197 @@
+tableHeadingPrefix: Interface operation 
+tableHeadingStyle: berschrift3
+noteStyle: NOTE
+tableCaptionStyle: TABLE-title
+yamlHeadingStyle: berschrift3
+yamlCodeStyle: YamlMono
+tableCellBorderWidth: 4
+yamlMonoBorderWidth: 4
+numberEmptyLines: 1
+tableColumnWidthCm:
+- 3.0
+- 6.0
+- 1.0
+- 3.0
+- 1.0
+overviewColumnWidthCm:
+- 3.0
+- 6.0
+outputs:
+- all: statusCode|Status code of execution of the interface operation|true|StatusCode|1
+suppressInputs:
+- level
+- extent
+- limit
+- cursor
+createWordFiles:
+- fn: Output_for_IEC63278-5.docx
+  useTemplateFn: .\templates\IEC_template.docx
+  listStyles: true
+  readOpenApiFiles:
+  #
+  # First list of files for the tables
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: AAS administration interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: These interface operations make it possible to access the elements of Asset Administration Shells, which are each an Identifiable entity. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: NOTE   For Identifiable, see IEC 63278-2.
+      paraStyle: NOTE
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations:
+      GetAssetAdministrationShell:
+        body: The interface operation described in Table %table-ref% allows to request for a specific AAS based on the provided AAS identifier.
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        outputs:
+        - all: payload|Requested Asset Administration Shell|true|AssetAdministrationShell|1
+      PutAssetAdministrationShell:
+        body: The interface operation described in Table %table-ref% allows to replace/ update a complete specific AAS.
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aas|Provided new Asset Administration Shell that should be used instead|true|AssetAdministrationShell|1 
+        outputs:
+        - all: payload|Replaced Asset Administration Shell|true|AssetAdministrationShell|1
+      GetAllSubmodelReferences:
+        body: The interface operation described in Table %table-ref% allows to return all Submodel references contained in a specific AAS. 
+        # TODO IDTA OpenAPI files: Submodel with capital first letter
+        explanation: Returns all Submodel references
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        outputs:
+        - all: payload|Requested Submodel References|true|Reference|0..*
+      PostSubmodelReference:
+        body: The interface operation described in Table %table-ref% enhances the list of Submodel references of an associated AAS by a new provided Submodel reference.  
+        # TODO IDTA OpenAPI files: Submodel with capital first letter
+        explanation: Creates a Submodel reference at the Asset Administration Shell
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: submodelRef|Reference to the Submodel|true|Reference|1
+        outputs:
+        - all: payload|Created Submodel Reference|true|Reference|1
+      DeleteSubmodelReference:
+        body: The interface operation described in Table %table-ref% removes a specific Submodel reference from the list of Submodel references of an associated AAS.
+        # TODO IDTA OpenAPI files: Submodel with capital first letter
+        explanation: Deletes the Submodel reference from the Asset Administration Shell. Does not delete the Submodel itself!
+        suppressInputs: 
+        - submodelIdentifier
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: submodelId|The unique id of the Submodel for the reference to be deleted|true|Identifier|1
+      GetAssetInformation:
+        body: The interface operation described in Table %table-ref% returns related asset information of an associated AAS. 
+        # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
+        explanation: Returns the asset information
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        outputs:
+        - all: payload|Requested Asset Information|true|AssetInformation|1
+      PutAssetInformation:
+        body: The interface operation described in Table %table-ref% allows to set or update asset-based information of an associated AAS. 
+        # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
+        explanation: Updates the asset information
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: assetInfo|Asset Information|true|AssetInformation|1
+      GetThumbnail:
+        body: The interface operation described in Table %table-ref% allows to request for a thumbnail file of an associated AAS.
+        # TODO IDTA OpenAPI files: No Text!
+        explanation: Returns the thumbnail file of an associated AAS.
+        notes:
+        - Thumbnail refers to a reduced size image of the asset (see IEC 63278-2). 
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        outputs:
+        - all: payload|Requested thumbnail file|true|File Content|1
+      PutThumbnail:
+        body: The interface operation described in Table %table-ref% allows to set or update a thumbnail file of an associated AAS. 
+        # TODO IDTA OpenAPI files: No Text!
+        explanation: Replaces the thumbnail file of an associated AAS.
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: file|Thumbnail file|true|File Content|1
+      DeleteThumbnail:
+        body: The interface operation described in Table %table-ref% allows to remove a thumbnail file of an associated AAS.
+        # TODO IDTA OpenAPI files: No Text!
+        explanation: Deletes the thumbnail file of an associated AAS.
+        inputs:
+        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+  #
+  # Second pass of the files for YAML
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: HTTP API
+      paraStyle: berschrift1
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: This Annex shows a mapping of interfaces to HTTP APIs (application programming interface). The definitions are for the interoperability of such APIs. The interface operations are described in OpenAPI version 3.0.3 using the YAML format. For more information on YAML see [2], [5]. 
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: For further details on the interfaces see [3] and [4].
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: NOTE   In known implementations, parameters for “Limit” and “Cursor” enable pagination of results and parameters for “Level” and “Extend” control extended possibilities towards depth of information. For interoperability, these parameters are noted in the mapping. 
+      paraStyle: NOTE
+    # End of: Extra header for chapter
+    - action: ExportPara
+      paraText: AAS administration interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all AAS administration interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+    useOperations:
+      GetAssetAdministrationShell:
+        body: The mapping of the interface operation described here allows to request for a specific AAS based on the provided AAS identifier.
+      PutAssetAdministrationShell:
+        body: The mapping of the interface operation described here allows to replace/ update a complete specific AAS.
+      GetAllSubmodelReferences:
+        body: The mapping of the interface operation described here allows to return all Submodel references contained in a specific AAS. 
+        explanation: Returns all Submodel references
+      PostSubmodelReference:
+        body: The mapping of the interface operation described here enhances the list of Submodel references of an associated AAS by a new provided Submodel reference.  
+        explanation: Creates a Submodel reference at the Asset Administration Shell
+      DeleteSubmodelReference:
+        body: The mapping of the interface operation described here removes a specific Submodel reference from the list of Submodel references of an associated AAS.
+        explanation: Deletes the Submodel reference from the Asset Administration Shell. Does not delete the Submodel itself!
+      GetAssetInformation:
+        body: The mapping of the interface operation described here returns related asset information of an associated AAS. 
+        explanation: Returns the asset information
+      PutAssetInformation:
+        body: The mapping of the interface operation described here allows to set or update asset-based information of an associated AAS. 
+        explanation: Updates the asset information
+      GetThumbnail:
+        body: The mapping of the interface operation described here allows to request for a thumbnail file of an associated AAS.
+        explanation: Returns the thumbnail file of an associated AAS.
+      PutThumbnail:
+        body: The mapping of the interface operation described here allows to set or update a thumbnail file of an associated AAS. 
+        explanation: Replaces the thumbnail file of an associated AAS.
+      DeleteThumbnail:
+        body: The mapping of the interface operation described here allows to remove a thumbnail file of an associated AAS.
+        explanation: Deletes the thumbnail file of an associated AAS.

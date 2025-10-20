@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,6 +11,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization.ObjectGraphVisitors;
 
 namespace Yaml2Docx
 {
@@ -23,28 +25,6 @@ namespace Yaml2Docx
         public ExportIecInterfaceOperation(YamlConfig.ExportConfig config)
         {
             _config = config;
-        }
-
-        public void ExportHeading2Data(
-            MainDocumentPart mainPart,
-            YamlConfig.ReadOpenApiFile cfg)
-        {
-            // access
-            Body? body = mainPart.Document.Body;
-            if (body == null)
-                return;
-
-            // Heading
-            if (cfg?.Heading2Text != null)
-                body.AppendChild(CreateParagraph(
-                    $"{cfg.Heading2Text}",
-                    styleId: $"{_config.Heading2Style}"));
-
-            // Intro text
-            if (cfg?.Body2Text != null)
-                body.AppendChild(CreateParagraph(
-                    $"{cfg.Body2Text}",
-                    styleId: $"{_config.BodyStyle}"));
         }
 
         public void ExportParagraph(
@@ -98,8 +78,8 @@ namespace Yaml2Docx
 
             // Heading
             body.AppendChild(CreateParagraph(
-                $"{opConfig?.Heading ?? _config.Heading3} {op.OperationId}",
-                styleId: $"{_config.Heading3Style}"));
+                $"{opConfig?.Heading ?? _config.TableHeadingPrefix} {op.OperationId}",
+                styleId: $"{_config.TableHeadingStyle}"));
 
             // Intro text
             body.AppendChild(CreateParagraph(
@@ -220,7 +200,7 @@ namespace Yaml2Docx
             // 2nd row: Explanation
             {
                 TableRow tr = new TableRow();
-                tr.Append(CreateCell("Explanation ", cw[0]));
+                tr.Append(CreateCell("Explanation", cw[0]));
                 tr.Append(CreateMergedCell($"{explanation}", true, cw[1]));
                 tr.Append(CreateMergedCell("", false, cw[2]));
                 tr.Append(CreateMergedCell("", false, cw[3]));
@@ -472,42 +452,65 @@ namespace Yaml2Docx
                 body.AppendChild(CreateParagraph(""));
         }
 
-        //public class EmptyListOmittingConverter : IYamlTypeConverter
+        //public class EmptyCollectionOmittingConverter : IYamlTypeConverter
         //{
         //    public bool Accepts(Type type)
         //    {
-        //        return typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string);
-        //    }
-
-        //    public object ReadYaml(IParser parser, Type type)
-        //    {
-        //        throw new NotImplementedException(); // only used for serialization
+        //        // Handle all IEnumerable types except string
+        //        return typeof(IEnumerable).IsAssignableFrom(type)
+        //               && type != typeof(string);
         //    }
 
         //    public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
         //    {
-        //        throw new NotImplementedException();
-        //    }
-
-        //    public void WriteYaml(IEmitter emitter, object? value, Type type)
-        //    {
-        //        if (value is IEnumerable enumerable)
-        //        {
-        //            bool hasElements = enumerable.Cast<object?>().Any();
-        //            if (hasElements)
-        //            {
-        //                var serializer = new SerializerBuilder().Build();
-        //                serializer.Serialize(emitter, value);
-        //            }
-        //        }
+        //        // Delegate normal deserialization
+        //        return rootDeserializer(type);
         //    }
 
         //    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
         //    {
-        //        throw new NotImplementedException();
+        //        // If null, omit
+        //        if (value == null)
+        //            return;
+
+        //        // If it's a collection and EMPTY → omit
+        //        if (value is IEnumerable enumerable && !enumerable.Cast<object?>().Any())
+        //            return;
+
+        //        // Otherwise (non-empty) → serialize normally
+        //        serializer(value, typeof(object));
         //    }
         //}
 
+        public sealed class OmitEmptyVisitor : ChainedObjectGraphVisitor
+        {
+            public OmitEmptyVisitor(IObjectGraphVisitor<IEmitter> nextVisitor)
+                : base(nextVisitor)
+            {
+            }
+
+            // Only override the property-level EnterMapping for class properties
+            public override bool EnterMapping(IPropertyDescriptor key, IObjectDescriptor value, IEmitter context, ObjectSerializer serializer)
+            {
+                if (value.Value == null)
+                {
+                    // Skip nulls
+                    return false;
+                }
+
+                // Skip empty collections (but not strings)
+                if (value.Value is IEnumerable enumerable && value.Type != typeof(string))
+                {
+                    if (!enumerable.Cast<object?>().Any())
+                    {
+                        return false;
+                    }
+                }
+
+                // Otherwise serialize normally
+                return base.EnterMapping(key, value, context, serializer);
+            }
+        }
 
         /// <summary>
         /// Export a single operation to the Word
@@ -522,15 +525,52 @@ namespace Yaml2Docx
             if (body == null)
                 return;
 
+            // try to suppress input parameters in OpenApiOperation
+            if (true && op?.Parameters != null)
+            {
+                var sup = new List<string>();
+                if (_config.SuppressInputs != null)
+                    sup.AddRange(_config.SuppressInputs);
+                if (opConfig.SuppressInputs != null)
+                    sup.AddRange(opConfig.SuppressInputs);
+
+                var toDel = new List<YamlOpenApi.OpenApiParameter>();
+                foreach (var si in sup) 
+                    foreach (var x in op.Parameters)
+                        if (si != null && true == x.Name?.Equals(si, StringComparison.InvariantCultureIgnoreCase))
+                            toDel.Add(x);
+
+                foreach (var td in toDel)
+                    op.Parameters.Remove(td);
+            }
+
+            // try remove x-semanticId
+            if (true && op?.SemanticIds != null)
+            {
+                op.SemanticIds = null;
+            }
+
             // serialize YAML
             var serializer = new SerializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                // .WithTypeConverter(new EmptyCollectionOmittingConverter())
                 .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults) // omit default/null
+                .WithEmissionPhaseObjectGraphVisitor(args => new OmitEmptyVisitor(args.InnerVisitor))
                 .Build();
             var yaml = serializer.Serialize(op);
 
             // build lines
             var lines = yaml.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Heading
+            body.AppendChild(CreateParagraph(
+                $"{opConfig?.Heading ?? _config.TableHeadingPrefix} {op.OperationId}",
+                styleId: $"{_config.YamlHeadingStyle}"));
+
+            // Intro text
+            body.AppendChild(CreateParagraph(
+                $"{opConfig?.Body ?? _config.Body}",
+                styleId: $"{_config.BodyStyle}"));
 
             // paragraphs
             var paras = CreateMonospacedParagraph(lines.ToList(), styleId: _config.YamlCodeStyle, isBoxed: true);
@@ -621,7 +661,7 @@ namespace Yaml2Docx
             return p;
         }
 
-        static List<Paragraph> CreateMonospacedParagraph(
+        public List<Paragraph> CreateMonospacedParagraph(
             List<string> lines,
             string? styleId = null,
             bool isBoxed = false)
@@ -637,11 +677,12 @@ namespace Yaml2Docx
             // Optional: add paragraph borders if boxed
             if (isBoxed)
             {
+                var bw = new DocumentFormat.OpenXml.UInt32Value(_config.YamlMonoBorderWidth);
                 ParagraphBorders borders = new ParagraphBorders(
-                    new TopBorder() { Val = BorderValues.Single, Size = 8 },
-                    new BottomBorder() { Val = BorderValues.Single, Size = 8 },
-                    new LeftBorder() { Val = BorderValues.Single, Size = 8 },
-                    new RightBorder() { Val = BorderValues.Single, Size = 8 }
+                    new TopBorder() { Val = BorderValues.Single, Size = bw },
+                    new BottomBorder() { Val = BorderValues.Single, Size = bw },
+                    new LeftBorder() { Val = BorderValues.Single, Size = bw },
+                    new RightBorder() { Val = BorderValues.Single, Size = bw }
                 );
                 pPr.Append(borders);
 
@@ -657,8 +698,10 @@ namespace Yaml2Docx
             firstPara.ParagraphProperties = pPr;
 
             // fill content
-            foreach (var line in lines)
+            for (int i=0; i<lines.Count; i++)
             {
+                var line = lines[i];
+
                 // Add font + size formatting
                 Run run = new Run();
                 RunProperties runProps = new RunProperties(
@@ -668,7 +711,9 @@ namespace Yaml2Docx
 
                 run.Append(runProps);
                 run.Append(new Text(line ?? "") { Space = SpaceProcessingModeValues.Preserve });
-                run.Append(new Break());
+
+                if (i < lines.Count - 1)
+                    run.Append(new Break());
 
                 firstPara.Append(run);
             }
@@ -676,17 +721,19 @@ namespace Yaml2Docx
             return new List<Paragraph>(new[] { firstPara });
         }
 
-        static TableCell CreateCell(string text, int width, bool bold = false)
+        public TableCell CreateCell(string text, int width, bool bold = false)
         {
             TableCell cell = new TableCell();
+
+            var bw = new DocumentFormat.OpenXml.UInt32Value(_config.TableCellBorderWidth);
 
             TableCellProperties cellProps = new TableCellProperties(
                 new TableCellWidth { Type = TableWidthUnitValues.Dxa, Width = width.ToString() },
                 new TableCellBorders(
-                    new TopBorder { Val = BorderValues.Single, Size = 8 },
-                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
-                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
-                    new RightBorder { Val = BorderValues.Single, Size = 8 }
+                    new TopBorder { Val = BorderValues.Single, Size = bw },
+                    new BottomBorder { Val = BorderValues.Single, Size = bw },
+                    new LeftBorder { Val = BorderValues.Single, Size = bw },
+                    new RightBorder { Val = BorderValues.Single, Size = bw }
                 ),
                 new TableCellMargin(
                     new LeftMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
@@ -720,18 +767,20 @@ namespace Yaml2Docx
             return cell;
         }
 
-        static TableCell CreateMergedCell(string text, bool isStart, int width, bool bold = false)
+        public TableCell CreateMergedCell(string text, bool isStart, int width, bool bold = false)
         {
             TableCell cell = new TableCell();
+
+            var bw = new DocumentFormat.OpenXml.UInt32Value(_config.TableCellBorderWidth);
 
             TableCellProperties cellProps = new TableCellProperties(
                 new TableCellWidth { Type = TableWidthUnitValues.Dxa, Width = width.ToString() },
                 new HorizontalMerge { Val = isStart ? MergedCellValues.Restart : MergedCellValues.Continue },
                 new TableCellBorders(
-                    new TopBorder { Val = BorderValues.Single, Size = 8 },
-                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
-                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
-                    new RightBorder { Val = BorderValues.Single, Size = 8 }
+                    new TopBorder { Val = BorderValues.Single, Size = bw },
+                    new BottomBorder { Val = BorderValues.Single, Size = bw },
+                    new LeftBorder { Val = BorderValues.Single, Size = bw },
+                    new RightBorder { Val = BorderValues.Single, Size = bw }
                 ),
                 new TableCellMargin(
                     new LeftMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
