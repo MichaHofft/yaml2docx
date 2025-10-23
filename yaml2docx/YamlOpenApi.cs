@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,6 +38,9 @@ namespace Yaml2Docx
             public string Url { get; set; } = string.Empty;
         }
 
+        /// <summary>
+        /// Purpose: Describe the structure of data objects
+        /// </summary>
         public class OpenApiProperty
         {
             public string? Type;
@@ -45,10 +49,10 @@ namespace Yaml2Docx
             public string? Description;
             public string? Example;
 
-            public int minItems = 0;
-            public int maxItems = 0;
-            public int minLength = 0;
-            public int maxLength = 0;
+            public int? minItems;
+            public int? maxItems;
+            public int? minLength;
+            public int? maxLength;
 
             public List<string>? Enum;
 
@@ -58,6 +62,114 @@ namespace Yaml2Docx
 
             [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
             public string? Ref;
+
+            public OpenApiProperty Clone()
+            {
+                var res = new OpenApiProperty()
+                {
+                    Type = Type,
+                    Format = Format,
+                    Pattern = Pattern,
+                    Description = Description,
+                    Example = Example,
+                    minItems = minItems,
+                    maxItems = maxItems,
+                    minLength = minLength,
+                    maxLength = maxLength,
+                    Ref = Ref
+                };
+
+                if (Enum != null)
+                    res.Enum = new List<string>(Enum);
+
+                if (Items != null)
+                    res.Items = Items.Clone();
+
+                if (AllOf != null)
+                    res.AllOf = new List<OpenApiProperty>(AllOf);
+
+                return res;
+            }
+
+            public void Join(OpenApiProperty other)
+            {
+                if (Type == null)
+                    Type = other.Type;
+                if (Format == null)
+                    Format = other.Format;
+                if (Pattern == null)
+                    Pattern = other.Pattern;
+                if (Description == null)
+                    Description = other.Description;
+                if (Example == null)
+                    Example = other.Example;
+
+                if (minItems == null)
+                    minItems = other.minItems;
+                if (maxItems == null)
+                    maxItems = other.maxItems;
+                if (minLength == null)
+                    minLength = other.minLength;
+                if (maxLength == null)
+                    maxLength = other.maxLength;
+
+                if (Enum == null) 
+                    Enum = other.Enum;
+                else if (other.Enum != null)
+                    Enum.AddRange(other.Enum);
+
+                if (Items == null)
+                    Items = other.Items;
+
+                if (AllOf == null)
+                    AllOf = other.AllOf;
+                else if (other.AllOf != null)
+                    AllOf.AddRange(other.AllOf);
+
+                // don't knwo that to do with Ref ..
+                if (Ref != null && other.Ref != null) 
+                    throw new Exception("Cannot handle joining to Refs!");
+            }
+        }
+
+        public class OpenApiOriginatedProperty
+        {
+            /// <summary>
+            /// Component coming from
+            /// </summary>
+            public string? Origin;
+
+            /// <summary>
+            /// Name, as given by dictionary key
+            /// </summary>
+            public string? Name;
+
+            /// Requested as required by superior data structure            
+            public bool Required;
+
+            /// <summary>
+            /// Property itself, value of dictionary
+            /// </summary>
+            public OpenApiProperty Property = new();
+
+            public OpenApiOriginatedProperty(string origin, string name, bool required, OpenApiProperty property)
+            {
+                Origin = origin;
+                Name = name;
+                Required = required;
+                Property = property;
+            }
+        }
+
+        public class OpenApiOriginatedPropertyList : List<OpenApiOriginatedProperty>
+        {
+            public OpenApiOriginatedPropertyList() : base()
+            {
+            }
+
+            public OpenApiOriginatedPropertyList(IEnumerable<OpenApiOriginatedProperty> items) : base(items)
+            {
+            }
         }
 
         public class OpenApiItems
@@ -67,6 +179,17 @@ namespace Yaml2Docx
             
             [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
             public string? Ref;
+
+            public OpenApiItems Clone()
+            {
+                var res = new OpenApiItems()
+                {
+                    Type = Type,
+                    Example = Example,
+                    Ref = Ref
+                };
+                return res;
+            }
         }
 
         public class OpenApiSchemaPart
@@ -162,6 +285,9 @@ namespace Yaml2Docx
             public Dictionary<string, OpenApiContent> Content = new();
         }
 
+        /// <summary>
+        /// Purpose: Describe inputs to an API endpoint
+        /// </summary>
         public class OpenApiParameter
         {
             public string? Name;
@@ -178,7 +304,7 @@ namespace Yaml2Docx
             // just a reference to another parameter
             [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
             public string? Ref;
-        }
+        }        
 
         public class OpenApiOperation
         {
@@ -260,6 +386,135 @@ namespace Yaml2Docx
                 }
                 return null;
             }
+
+            public object? FindComponent(string path)
+            {
+                Func<string, string?> check = (start) =>
+                {
+                    if (path.StartsWith(start))
+                        return path.Substring(start.Length);
+                    return null;
+                };
+
+                var isSchema = check("#/components/schemas/");
+                if (isSchema != null && true == Components?.Schemas?.ContainsKey(isSchema))
+                    return Components?.Schemas[isSchema];
+
+                var isResponses = check("#/components/responses/");
+                if (isResponses != null && true == Components?.Responses?.ContainsKey(isResponses))
+                    return Components?.Responses[isResponses];
+
+                var isParameters = check("#/components/parameters/");
+                if (isParameters != null && true == Components?.Parameters?.ContainsKey(isParameters))
+                    return Components?.Parameters[isParameters];
+
+                var isRequestBodies = check("#/components/requestBodies/");
+                if (isRequestBodies != null && true == Components?.RequestBodies?.ContainsKey(isRequestBodies))
+                    return Components?.RequestBodies[isRequestBodies];
+
+                return null;
+            }
+
+            public T? FindComponent<T>(string path) where T : class
+            {
+                return FindComponent(path) as T;
+            }
+
+            public OpenApiOriginatedPropertyList? RecursiveFindPropertyBundles(
+                string schemaName,
+                HashSet<string?>? schemasTouched = null)
+            {
+                // any result?
+                var schema = FindComponent<OpenApiSchema>(schemaName);
+                if (schema == null) 
+                    return null;
+
+                // ok, start result
+                var res = new OpenApiOriginatedPropertyList();
+
+                // some lambdas for touching schemas
+                Action<string?> touchSchema = (sname) =>
+                {
+                    if (sname != null)
+                        schemasTouched?.Add(sname);
+                };
+
+                Action<string?> expandAndTouchSchema = (sname) =>
+                {
+                    // access
+                    if (sname == null)
+                        return;
+
+                    // potential component?
+                    var typeComp = FindComponent<YamlOpenApi.OpenApiSchema>("#/components/schemas/" + sname);
+                    // is a one of?
+                    if (typeComp != null && typeComp.OneOf != null && typeComp.OneOf.Count > 0)
+                    {
+                        foreach (var one in typeComp.OneOf)
+                            touchSchema(YamlOpenApi.StripSchemaHead(one?.Ref));
+                    }
+                    else
+                        touchSchema(sname);
+                };
+
+                // integrate all allOf
+                if (schema.AllOf != null)
+                    foreach (var ao in schema.AllOf)
+                    {
+                        // do we find properties
+                        if (ao?.Properties?.Any() == true)
+                            foreach (var p in ao.Properties)
+                            {
+                                // make a new list of property attributes
+                                var joinedProp = p.Value.Clone();
+                                    
+                                // for properties.AllOf -> join ATTRIBUTES together ..
+                                if (p.Value.AllOf != null)
+                                    foreach (var poa in p.Value.AllOf)
+                                        joinedProp.Join(poa);
+
+                                // use type to add to touched schemas
+                                touchSchema(p.Value.Type);
+                                expandAndTouchSchema(YamlOpenApi.StripSchemaHead(p.Value.Ref));
+                                if (p.Value.Type == "array" && p.Value.Items?.Ref != null)
+                                    expandAndTouchSchema(YamlOpenApi.StripSchemaHead(p.Value.Items.Ref));
+
+                                // add property
+                                res.Add(new OpenApiOriginatedProperty(schemaName, p.Key, IsContained(ao.Required, p.Key), joinedProp));
+                            }
+
+                        // TODO: what is with properties.Items / AllOf
+
+                        // do we find references
+                        if (ao?.Ref != null)
+                        {
+                            // add to touched
+                            var refSchemaName = StripSchemaHead(ao.Ref);
+                            touchSchema(refSchemaName);
+
+                            // recurse
+                            var props2 = RecursiveFindPropertyBundles(ao.Ref, schemasTouched);
+                            if (props2 != null)
+                                res.AddRange(props2);
+                        }
+                    }
+
+                // also "normal" properties
+                if (schema.Properties?.Any() == true)
+                    foreach (var sp in schema.Properties)
+                    {
+                        // use type to add to touched schemas
+                        expandAndTouchSchema(sp.Value.Type);
+                        if (sp.Value.Type == "array" && sp.Value.Items?.Ref != null)
+                            expandAndTouchSchema(YamlOpenApi.StripSchemaHead(sp.Value.Items.Ref));
+
+                        // add property
+                        res.Add(new OpenApiOriginatedProperty(schemaName, sp.Key, IsContained(schema.Required, sp.Key), sp.Value));
+                    }
+
+                // in any case a success
+                return res;
+            }            
         }
 
         public static OpenApiDocument? Load(string fn)
@@ -280,5 +535,21 @@ namespace Yaml2Docx
             var doc = deserializer.Deserialize<OpenApiDocument>(yml);
             return doc;
         }
+
+        public static string? StripSchemaHead(string? refStr)
+        {
+            return refStr?.Replace("#/components/schemas/", "");
+        }
+
+        public static bool IsContained(List<string>? list, string? val)
+        {
+            if (list == null || val == null)
+                return false;
+            foreach (var l in list)
+                if (l.Equals(val, StringComparison.InvariantCultureIgnoreCase))
+                    return true;
+            return false;
+        }
+
     }
 }

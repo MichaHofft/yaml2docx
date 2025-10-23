@@ -12,6 +12,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization.ObjectGraphVisitors;
+using static Yaml2Docx.YamlOpenApi;
 
 namespace Yaml2Docx
 {
@@ -582,6 +583,258 @@ namespace Yaml2Docx
 
         }
 
+        /// <summary>
+        /// Export a single schema type information with originated property bundles 
+        /// </summary>
+        public void ExportSinglePropertyBundle(
+            YamlOpenApi.OpenApiDocument doc,
+            MainDocumentPart mainPart,
+            string schemaName,
+            OpenApiOriginatedPropertyList oplist)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = (new[] { 
+                substTablRef, 
+                new Substitution("schema", schemaName, false) } 
+            ).ToList();
+
+            // Heading
+            body.AppendChild(CreateParagraph(
+                $"{_config.SchemaHeadingPrefix} {schemaName}",
+                styleId: $"{_config.TableHeadingStyle}"));
+
+            // Intro text
+            body.AppendChild(CreateParagraph(
+                $"{_config.SchemaBody}",
+                styleId: $"{_config.BodyStyle}",
+                substitutions: substs));
+
+            // filter suppresed out
+            oplist = new OpenApiOriginatedPropertyList(oplist.Where(op => !YamlOpenApi.IsContained(_config.SuppressSchemaNames, op.Name)));
+
+            // sort according specific order
+            Func<string?, int> originOrder = (str) =>
+            {
+                // schema itself doesget sorted very much to the bottom
+                if (str?.Equals(schemaName, StringComparison.InvariantCultureIgnoreCase) == true)
+                    return 99999;
+                
+                // if unknown, then near to bottom
+                var res = 88888;
+
+                // try to assign position
+                if (str != null && _config.OriginSchemaOrder != null)
+                    for (int i = 0; i < _config.OriginSchemaOrder.Count; i++)
+                    {
+                        if (str.Equals(_config.OriginSchemaOrder[i], StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            res = i;
+                            break;
+                        }
+                }
+
+                // ok
+                return res;
+            };
+            oplist.Sort((o1, o2) => {
+                var oo1 = originOrder(YamlOpenApi.StripSchemaHead(o1.Origin));
+                var oo2 = originOrder(YamlOpenApi.StripSchemaHead(o2.Origin));
+                if (oo1 < oo2)
+                    return -1;
+                else if (oo1 > oo2)
+                    return 1;
+                else
+                    return string.Compare(o1.Name, o2.Name, StringComparison.InvariantCultureIgnoreCase);
+            });
+
+            // Create the table
+            Table table = new Table();
+
+            // Define table properties (1 pt border, full width)
+            TableProperties tblProps = new TableProperties(
+                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }, // 100% width (5000 = 100% in OpenXML)
+                new TableLayout { Type = TableLayoutValues.Fixed }, // <=== FIXED LAYOUT
+                new TableBorders(
+                    new TopBorder { Val = BorderValues.Single, Size = 8 },
+                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
+                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
+                    new RightBorder { Val = BorderValues.Single, Size = 8 },
+                    new InsideHorizontalBorder { Val = BorderValues.None, Size = 8 },
+                    new InsideVerticalBorder { Val = BorderValues.None, Size = 8 }
+                )
+            );
+            table.AppendChild(tblProps);
+
+            // Define column widths (sum ~9360 twips = ~6.5 inches)
+            double cm = 567;
+            int[] cw = { (int)(4 * cm), (int)(4 * cm), (int)(1 * cm), (int)(1 * cm), (int)(3 * cm) };
+
+            //if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
+            //    for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
+            //        cw[i] = (int)(cm * _config.OverviewColumnWidthCm[i]);
+
+            TableGrid tableGrid = new TableGrid();
+            foreach (int width in cw)
+            {
+                tableGrid.Append(new GridColumn() { Width = width.ToString() });
+            }
+            table.Append(tableGrid);
+
+            // 1st row: Top 
+            if (false)
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateMergedCell(schemaName, true, cw[0], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[1]));
+                tr.Append(CreateMergedCell("", false, cw[2]));
+                tr.Append(CreateMergedCell("", false, cw[3]));
+                tr.Append(CreateMergedCell("", false, cw[4]));
+                table.Append(tr);
+            }
+
+            // 1st row: Column headerHeader 
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("Member", cw[0]));
+                tr.Append(CreateCell("One of data type(s)", cw[1]));
+                tr.Append(CreateCell("Req.", cw[2]));
+                tr.Append(CreateCell("Card. if present", cw[3]));
+                tr.Append(CreateCell("from", cw[4]));
+                table.Append(tr);
+            }
+
+            // 2nd.. row: single member
+            string? lastFrom = null;
+            foreach (var op in oplist)
+            {
+                // prepare cell data, first
+                var name = op.Name;
+                var type = op.Property?.Type;
+                if (type == null && op.Property?.Ref != null)
+                    type = YamlOpenApi.StripSchemaHead(op.Property.Ref.Replace("#/components/schemas/", ""));
+
+                var req = "no";
+                var card = "0..1";
+                if (op.Required)
+                {
+                    req = "yes";
+                    card = "1";
+                }
+                var from = YamlOpenApi.StripSchemaHead(op.Origin);
+                if (op.Property?.Type == "array" && op.Property.Items?.Ref != null)
+                {
+                    type = YamlOpenApi.StripSchemaHead(op.Property.Items.Ref);
+                    var min = "0";
+                    var max = "*";
+                    if (op.Property.minItems != null)
+                        min = op.Property.minItems.ToString() ?? "0";
+                    if (op.Property.maxItems != null)
+                        max = op.Property.maxItems.ToString() ?? "0";
+                    card = $"{min}..{max}";
+                }
+
+                // expand type??
+                var typeComp = doc.FindComponent<YamlOpenApi.OpenApiSchema>("#/components/schemas/" + type);
+                // is a one of
+                if (typeComp != null && typeComp.OneOf != null && typeComp.OneOf.Count > 0)
+                {
+                    var types = new List<string>();
+                    foreach (var one in typeComp.OneOf)
+                        if (one?.Ref != null)
+                            types.Add(YamlOpenApi.StripSchemaHead(one.Ref) ?? "?");
+                    type = string.Join("\n", types);
+                }
+
+                // skip the "top" deviding line to above "from"?
+                var skipDividingLine = false;
+                if (lastFrom != null && lastFrom == from)
+                {
+                    skipDividingLine = true;
+                }
+
+                // put it in Word
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell($"{name}", cw[0], bold: true));
+                tr.Append(CreateCell($"{type}", cw[1]));
+                tr.Append(CreateCell($"{req}",  cw[2]));
+                tr.Append(CreateCell($"{card}", cw[3]));
+                tr.Append(CreateCell($"{(skipDividingLine ? "" : from)}", cw[4], verticalMerge: true, verticalMergeRestart: !skipDividingLine));
+                table.Append(tr);
+
+                // if skipped dividing line, do not break across pages here
+                if (skipDividingLine)
+                {
+                    TableRowProperties trPr = new TableRowProperties(
+                        new CantSplit() // prevent row from splitting across pages
+                    );
+                    tr.Append(trPr);
+                }
+
+                // state
+                lastFrom = from;
+            }
+
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – {_config.SchemaTableCaptionPrefix} {schemaName}")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // Really appending the table
+            body.Append(table);
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+        }
+
         //
         // Helpers for OpenXML / Word
         // 
@@ -721,7 +974,8 @@ namespace Yaml2Docx
             return new List<Paragraph>(new[] { firstPara });
         }
 
-        public TableCell CreateCell(string text, int width, bool bold = false)
+        public TableCell CreateCell(string text, int width, bool bold = false,
+            bool verticalMerge = false, bool verticalMergeRestart = true)
         {
             TableCell cell = new TableCell();
 
@@ -744,26 +998,43 @@ namespace Yaml2Docx
                 new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Top }
             );
 
-            // Add font + size formatting
-            Run run = new Run();
-            RunProperties runProps = new RunProperties(
-                new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
-                new FontSize { Val = "16" } // 8 pt
-            );
+            if (verticalMerge)
+            {
+                var vm = new VerticalMerge();
+                vm.Val = verticalMergeRestart ? MergedCellValues.Restart : MergedCellValues.Continue;
+                cellProps.AddChild(vm);
+            }
+            cell.Append(cellProps);
 
-            if (bold)
-                runProps.Append(new Bold());
-
-            run.Append(runProps);
-            run.Append(new Text(text ?? "") { Space = SpaceProcessingModeValues.Preserve });
-
-            Paragraph paragraph = new Paragraph(run)
+            // prepare Paragraph
+            Paragraph paragraph = new Paragraph()
             {
                 ParagraphProperties = new ParagraphProperties(new SpacingBetweenLines { After = "120" })
             };
 
-            cell.Append(cellProps);
+            // split in multiple lines by '\n'
+            var lines = (text ?? "").Split(new[] { '\n' }, StringSplitOptions.None);
+            foreach (var line in lines)
+            {
+                // Add font + size formatting
+                Run run = new Run();
+                RunProperties runProps = new RunProperties(
+                    new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
+                    new FontSize { Val = "16" } // 8 pt
+                );
+
+                if (bold)
+                    runProps.Append(new Bold());
+
+                run.Append(runProps);
+                run.Append(new Text(line) { Space = SpaceProcessingModeValues.Preserve });
+                if (line != lines.Last())
+                    run.Append(new Break());
+
+                paragraph.Append(run);
+            }
             cell.Append(paragraph);
+                        
             return cell;
         }
 

@@ -1,4 +1,7 @@
 tableHeadingPrefix: Interface operation 
+schemaHeadingPrefix: Data type of
+schemaTableCaptionPrefix: Overview on data type
+schemaBody: Table %table-ref% provides an overview of the data type %schema% for the mapping to serialization.
 tableHeadingStyle: berschrift4
 noteStyle: NOTE
 tableCaptionStyle: TABLE-title
@@ -23,6 +26,19 @@ suppressInputs:
 - extent
 - limit
 - cursor
+originSchemaOrder:
+- HasDataSpecification
+- HasExtensions
+- HasKind
+- HasSemantics
+- Referable
+- Identifiable
+- Qualifiable
+- Administrative Information
+- SubmodelElement
+- DataElement
+suppressSchemaNames:
+- modelType
 createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
@@ -360,3 +376,28 @@ createWordFiles:
       DeleteThumbnail:
         body: The mapping of the interface operation described here allows to remove a thumbnail file of an associated AAS.
         explanation: Deletes the thumbnail file of an associated AAS.
+  #
+  # Third pass: Schemas = Data types
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    actions:
+    - action: ExportPara
+      paraText: Schemas = Data types
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Bla
+      paraStyle: Normal
+    - action: ExportSchema
+      includeSchemas: 
+      - AssetAdministrationShell
+      # is only associated via Reference, therefore 
+      - Submodel
+      # CD missing
+      # abstract types are skipped elsewise
+      - SubmodelElement
+      - DataElement
+      suppressSchemas:
+      - EmbeddedDataSpecification
+      - BasicEventElement
+      - Capability
+      - ModelType
