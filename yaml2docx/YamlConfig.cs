@@ -103,15 +103,16 @@ namespace Yaml2Docx
         public class ExportAction
         {
             /// <summary>
-            /// ExportPara, ExportOverview, ExportTables, ExportYaml, ExportSchemas
+            /// ExportPara, ExportOverview, ExportTables, ExportYaml, ExportSchemas, ExportPatterns
             /// </summary>
             public string Action = "";
 
             public string? ParaText;
             public string? ParaStyle;
 
-            public List<string>? IncludeSchemas;
-            public List<string>? SuppressSchemas;
+            public List<string> IncludeSchemas = new();
+            public List<string> SuppressSchemas = new();
+            public List<string> SuppressMembers = new();
         }
 
         public class ReadOpenApiFile
@@ -144,6 +145,7 @@ namespace Yaml2Docx
             public string SchemaBody = "TBD";
 
             public string SchemaTableCaptionPrefix = "TBD";
+            public string PatternTableCaptionPrefix = "TBD";
 
             public string Heading2Style = "Normal";
             public string TableHeadingStyle = "Normal";
@@ -172,7 +174,9 @@ namespace Yaml2Docx
 
             public List<string> OriginSchemaOrder = new();
             public List<string> SuppressSchemaNames = new();
-            
+
+            public int PatternInlineLimit = 80;
+
             public List<CreateWordFile> CreateWordFiles = new();
         }
 

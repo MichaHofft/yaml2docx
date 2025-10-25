@@ -130,6 +130,14 @@ namespace Yaml2Docx
                 if (Ref != null && other.Ref != null) 
                     throw new Exception("Cannot handle joining to Refs!");
             }
+
+            public void SetFrom(OpenApiSchema other)
+            {
+                if (other.Type != null)
+                    Type = other.Type;
+                if (other.Enum != null)
+                    Enum = other.Enum;
+            }
         }
 
         public class OpenApiOriginatedProperty
@@ -422,12 +430,15 @@ namespace Yaml2Docx
 
             public OpenApiOriginatedPropertyList? RecursiveFindPropertyBundles(
                 string schemaName,
-                HashSet<string?>? schemasTouched = null)
+                HashSet<string>? schemasTouched = null)
             {
                 // any result?
                 var schema = FindComponent<OpenApiSchema>(schemaName);
                 if (schema == null) 
                     return null;
+
+                if (schemaName == "HasKind")
+                    ;
 
                 // ok, start result
                 var res = new OpenApiOriginatedPropertyList();
@@ -465,9 +476,23 @@ namespace Yaml2Docx
                         if (ao?.Properties?.Any() == true)
                             foreach (var p in ao.Properties)
                             {
+                                if (p.Key == "kind")
+                                    ;
+
                                 // make a new list of property attributes
                                 var joinedProp = p.Value.Clone();
-                                    
+
+                                // may be SET by a Ref
+                                if (p.Value.Ref != null)
+                                {
+                                    var refSchema = FindComponent<OpenApiSchema>(p.Value.Ref);
+                                    if (refSchema != null)
+                                    {
+                                        // overtake attributes!
+                                        joinedProp.SetFrom(refSchema);
+                                    }
+                                }
+
                                 // for properties.AllOf -> join ATTRIBUTES together ..
                                 if (p.Value.AllOf != null)
                                     foreach (var poa in p.Value.AllOf)
@@ -503,13 +528,25 @@ namespace Yaml2Docx
                 if (schema.Properties?.Any() == true)
                     foreach (var sp in schema.Properties)
                     {
+                        // for Ref of property -> join ATTRIBUTES together ..
+                        var joinedProp = sp.Value.Clone();
+                        if (sp.Value.Ref != null)
+                        {
+                            var refSchema = FindComponent<OpenApiSchema>(sp.Value.Ref);
+                            if (refSchema != null)
+                            {
+                                // overtake attributes!
+                                joinedProp.SetFrom(refSchema);
+                            }
+                        }
+
                         // use type to add to touched schemas
-                        expandAndTouchSchema(sp.Value.Type);
-                        if (sp.Value.Type == "array" && sp.Value.Items?.Ref != null)
-                            expandAndTouchSchema(YamlOpenApi.StripSchemaHead(sp.Value.Items.Ref));
+                        expandAndTouchSchema(joinedProp.Type);
+                        if (joinedProp.Type == "array" && joinedProp.Items?.Ref != null)
+                            expandAndTouchSchema(YamlOpenApi.StripSchemaHead(joinedProp.Items.Ref));
 
                         // add property
-                        res.Add(new OpenApiOriginatedProperty(schemaName, sp.Key, IsContained(schema.Required, sp.Key), sp.Value));
+                        res.Add(new OpenApiOriginatedProperty(schemaName, sp.Key, IsContained(schema.Required, sp.Key), joinedProp));
                     }
 
                 // in any case a success

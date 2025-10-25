@@ -10,6 +10,8 @@ yamlCodeStyle: YamlMono
 tableCellBorderWidth: 4
 yamlMonoBorderWidth: 4
 numberEmptyLines: 1
+patternInlineLimit: 80
+patternTableCaptionPrefix: Overview on indexed string pattern definitions 
 tableColumnWidthCm:
 - 3.0
 - 6.0
@@ -45,7 +47,7 @@ createWordFiles:
   listStyles: true
   readOpenApiFiles:
   #
-  # First pass: List of files for the tables
+  # First pass: Tables for the individual interface operations
   #
   #
   # AAS interface
@@ -310,7 +312,7 @@ createWordFiles:
       GetOperationAsyncResult:
         body: The interface operation describe in Table %table-ref% allows to request the result of a completed, executed asynchronous operation represented by an Operation element of a specific Submodel and provided operation handler, which was provided when the asynchronous operation was called. 
   #
-  # Second pass of the files for YAML
+  # Second pass: YAML
   #
   #
   #
@@ -382,11 +384,32 @@ createWordFiles:
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     actions:
     - action: ExportPara
-      paraText: Schemas = Data types
+      paraText: Serialization of data types for interface operations
       paraStyle: berschrift2
     - action: ExportPara
-      paraText: Bla
+      paraText: The following sub sections depict the serialization of specific data types required as input and output data of interface operations. In particular, the serialization into JSON data interchange syntax (ISO/ IEC 21778:2017) is targeted.
       paraStyle: Normal
+    - action: ExportPara
+      paraText: "The tables in the following sub sections each specify the represenation of a specific JSON object. The tables feature the following columns:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: "Member: Attribute within the particular data type. Specified as JSON string followed by the colon structural token. "
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "One of data types(s): List of one or more data types possible to be used to express the JSON value of the member attribute. This could be a JSON object or JSON array by itself."
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "Req.: Required. Specifies, if the member attribute is always required to be specified for the JSON object or if it can be omited or specified by the literal name token null."
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "Card. if present. Minimum and maximum cardinality of the JSON value, if the member attribute is specified. If the maximum cardinality is more than one, the JSON value needs to be specified as a JSON array."
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "From: Specifies, in which class of the IEC 63278-2 meta model the member attribute was originally specified in case of deriving from this class."
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "Further specification: Specifies further requirements, such as string patterns or minimum or maximum string lengths or string enumeration values. For string pattern specification, the requirements from sub section for indexed string pattern definitions apply. "
+      paraStyle: ListDash
     - action: ExportSchema
       includeSchemas: 
       - AssetAdministrationShell
@@ -395,9 +418,58 @@ createWordFiles:
       # CD missing
       # abstract types are skipped elsewise
       - SubmodelElement
-      - DataElement
       suppressSchemas:
+      - DataTypeDefXsd
+      - Direction
+      - EntityType
+      - DataElement
       - EmbeddedDataSpecification
       - BasicEventElement
       - Capability
       - ModelType
+      - AasSubmodelElements
+      - AbstractLangString
+      - HasDataSpecification
+      suppressMembers:
+      - embeddedDataSpecifications
+      - modelType
+  #
+  # Fourth pass: Patterns
+  # (just use one file to pass test)
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    actions:
+    - action: ExportPara
+      paraText: Indexed string pattern definitions
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: > 
+        A JSON value with data type "string" shall be restricted to the characters as defined in XML Schema 1.0, i.e. the string shall consist of these characters only: ^[\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u00010000-\u0010FFFF]*$. This ensures, that encoding and interoperability between different implementations is possible. See https://www.w3.org/TR/xml/#charsets for more information on XML Schema 1.0 string handling. Otherwise, strings in other formats such as JSON could not be converted to XML and vice versa.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: >
+        The JSON value with data type "string" shall contain only valid Unicode characters in the range of encoded in UTF-16 format. The character set of XML/ JSON includes (given as numerical hexidecimal code points and/or ranges in Unicode):
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: "0x09: ASCII horizontal tab,"
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "0x0A: ASCII linefeed (newline),"
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "0x0D: ASCII carriage return,"
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "0x20: ASCII space,"
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "x20 - 0xD7FF: all the characters of the Basic Multilingual Plane, and"
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: "0x00010000-0x0010FFFF: all the characters beyond the Basic Multilingual Plane (e.g., emoticons)."
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: >
+        For specific JSON object member, further specific string patterns are specified by the following table.
+      paraStyle: Normal
+    - action: ExportPatterns

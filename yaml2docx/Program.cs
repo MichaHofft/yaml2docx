@@ -178,42 +178,57 @@ namespace Yaml2Docx
                             if (actName == "exportschema" && act.IncludeSchemas != null)
                             {
                                 // try to find a schemas / data types the wished (root) schema touches
-                                var schemasTouched = new HashSet<string?>();
+                                var schemasTouched = new HashSet<string>();
                                 foreach (var sch in act.IncludeSchemas)
                                     if (sch.Trim().Length > 0)
                                         schemasTouched.Add(sch);
 
                                 // Export the (root) schemas to find out, which other schemas are touched
-                                var success = false;
                                 foreach (var sch in act.IncludeSchemas)
-                                {
-                                    var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{sch}", schemasTouched);
-                                    success = success || (pbs != null);
-                                }
+                                    doc.RecursiveFindPropertyBundles($"#/components/schemas/{sch}", schemasTouched);
 
-                                // start the exporting of schemas
-                                if (success)
-                                {
-                                    // make a sorted list of schemas touched (no null!)
-                                    var schemaList = schemasTouched.Where((s) => s != null).ToList();
-                                    schemaList.Sort();
+                                // the recursive search for properties might not have had a deep recursion on all
+                                // schema types; therefore do it AGAIN based on the touched schemas ..
+                                var toVisit = schemasTouched.ToList();
+                                foreach (var sch in toVisit)
+                                    doc.RecursiveFindPropertyBundles($"#/components/schemas/{sch}", schemasTouched);
 
-                                    // visit them
-                                    foreach (var k in schemaList)
+                                // make a sorted list of schemas touched (no null!)
+                                var schemaList = schemasTouched.Where((s) => s != null).ToList();
+                                schemaList.Sort();
+
+                                // remove if on suppressList
+                                foreach (var sch in act.SuppressSchemas)
+                                    if (schemaList.Contains(sch))
+                                        schemaList.Remove(sch);
+
+                                // visit them
+                                foreach (var k in schemaList)
+                                {
+                                    // again (but not touch schemas)
+                                    if (k == "Key")
+                                        ;
+                                    var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{k}");
+                                    if (pbs != null)
                                     {
-                                        // again (but not touch schemas)
-                                        var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{k}");
-                                        if (pbs != null)
-                                        {
-                                            Console.WriteLine($"    Schema to be documented: {k} .. FOUND!");
-                                            wp.ExportSinglePropertyBundle(doc, mainPart, k, pbs);
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($"    Schema to be documented: {k} .. missed!");
-                                        }
+                                        Console.WriteLine($"    Schema to be documented: {k} .. FOUND!");
+                                        wp.ExportSinglePropertyBundle(doc, mainPart, k, pbs,
+                                            suppressMembers: act.SuppressMembers);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"    Schema to be documented: {k} .. missed!");
                                     }
                                 }
+                            }
+                            else
+                            if (actName == "exportpatterns")
+                            {
+                                // log
+                                Console.WriteLine($"      Create pattern table ..");
+
+                                // Export operations
+                                wp.ExportPatternStorage(doc, mainPart);
                             }
                             else
                             {

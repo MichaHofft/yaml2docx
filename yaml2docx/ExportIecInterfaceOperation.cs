@@ -583,6 +583,8 @@ namespace Yaml2Docx
 
         }
 
+        public List<string> PatternStorage = new();
+
         /// <summary>
         /// Export a single schema type information with originated property bundles 
         /// </summary>
@@ -590,7 +592,8 @@ namespace Yaml2Docx
             YamlOpenApi.OpenApiDocument doc,
             MainDocumentPart mainPart,
             string schemaName,
-            OpenApiOriginatedPropertyList oplist)
+            OpenApiOriginatedPropertyList oplist,
+            List<string>? suppressMembers = null)
         {
             // access
             Body? body = mainPart.Document.Body;
@@ -673,7 +676,7 @@ namespace Yaml2Docx
 
             // Define column widths (sum ~9360 twips = ~6.5 inches)
             double cm = 567;
-            int[] cw = { (int)(4 * cm), (int)(4 * cm), (int)(1 * cm), (int)(1 * cm), (int)(3 * cm) };
+            int[] cw = { (int)(4 * cm), (int)(4 * cm), (int)(1 * cm), (int)(1.5 * cm), (int)(3 * cm) };
 
             //if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
             //    for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
@@ -701,18 +704,42 @@ namespace Yaml2Docx
             // 1st row: Column headerHeader 
             {
                 TableRow tr = new TableRow();
-                tr.Append(CreateCell("Member", cw[0]));
-                tr.Append(CreateCell("One of data type(s)", cw[1]));
-                tr.Append(CreateCell("Req.", cw[2]));
-                tr.Append(CreateCell("Card. if present", cw[3]));
-                tr.Append(CreateCell("from", cw[4]));
+                tr.Append(CreateCell("Member", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: true));
+                tr.Append(CreateCell("One of data type(s)", cw[1], bold: true));
+                tr.Append(CreateCell("Req.", cw[2], bold: true));
+                tr.Append(CreateCell("Card. if present", cw[3], bold: true));
+                tr.Append(CreateCell("From", cw[4], bold: true, verticalMerge: true, verticalMergeRestart: true));
                 table.Append(tr);
             }
 
-            // 2nd.. row: single member
+            // 2nd row: Column headerHeader 
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: false));
+                tr.Append(CreateMergedCell("Further specification", true, cw[1], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[2], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[3], bold: true));
+                tr.Append(CreateCell("", cw[4], bold: true, verticalMerge: true, verticalMergeRestart: false));
+                table.Append(tr);
+            }
+
+            // 3rd.. row: single member
             string? lastFrom = null;
             foreach (var op in oplist)
             {
+                //
+                // Row 1 .. the usual stuff
+                //
+
+                var hasEnum = (op.Property?.Enum != null && op.Property.Enum.Count > 0);
+                var hasPattern = (op.Property?.Pattern != null && op.Property.Pattern.Length > 0);
+                var hasLen = (op.Property?.minLength != null || op.Property?.maxLength != null);
+                var needOf2ndRow = hasEnum || hasPattern || hasLen;
+
+                // skip member
+                if (op.Name != null && suppressMembers?.Contains(op.Name) == true)
+                    continue;
+
                 // prepare cell data, first
                 var name = op.Name;
                 var type = op.Property?.Type;
@@ -759,25 +786,116 @@ namespace Yaml2Docx
                 }
 
                 // put it in Word
-                TableRow tr = new TableRow();
-                tr.Append(CreateCell($"{name}", cw[0], bold: true));
-                tr.Append(CreateCell($"{type}", cw[1]));
-                tr.Append(CreateCell($"{req}",  cw[2]));
-                tr.Append(CreateCell($"{card}", cw[3]));
-                tr.Append(CreateCell($"{(skipDividingLine ? "" : from)}", cw[4], verticalMerge: true, verticalMergeRestart: !skipDividingLine));
-                table.Append(tr);
-
-                // if skipped dividing line, do not break across pages here
-                if (skipDividingLine)
+                if (true) 
                 {
-                    TableRowProperties trPr = new TableRowProperties(
-                        new CantSplit() // prevent row from splitting across pages
-                    );
-                    tr.Append(trPr);
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell($"{name}", cw[0], bold: true, verticalMerge: needOf2ndRow, verticalMergeRestart: needOf2ndRow));
+                    tr.Append(CreateCell($"{type}", cw[1]));
+                    tr.Append(CreateCell($"{req}", cw[2]));
+                    tr.Append(CreateCell($"{card}", cw[3]));
+                    tr.Append(CreateCell($"{(skipDividingLine ? "" : from)}", cw[4], verticalMerge: true, verticalMergeRestart: !skipDividingLine));
+                    table.Append(tr);
+
+                    // if skipped dividing line, do not break across pages here
+                    if (skipDividingLine)
+                    {
+                        TableRowProperties trPr = new TableRowProperties(
+                            new CantSplit() // prevent row from splitting across pages
+                        );
+                        tr.Append(trPr);
+                    }
                 }
 
                 // state
                 lastFrom = from;
+
+                //
+                // Row 2 : extras .. enum?
+                // Challenge: keep the 5th column, as it is ..
+                //
+
+                if (needOf2ndRow)
+                {
+                    // basically evaluate, what is in the 2nd row
+                    var secondText = "";
+                    
+                    if (hasEnum && op.Property?.Enum != null)
+                    {
+                        var types = new List<string>();
+                        types.Add("Enumeration values: ");
+                        foreach (var etxt in op.Property.Enum)
+                            if (etxt != null)
+                                types.Add($"\u2014 {etxt}");
+                        secondText = string.Join("\n", types);
+                    }
+
+                    if (hasPattern && op.Property?.Pattern != null)
+                    {
+                        // depict pattern directly or store for later?
+                        if (op.Property.Pattern.Length <= _config.PatternInlineLimit)
+                        {
+                            // direct
+                            if (secondText.Length > 0)
+                                secondText += "\n";
+                            secondText += $"Pattern: {op.Property.Pattern}";
+                        }
+                        else
+                        {
+                            // already contained? .. or add?
+                            var patternNdx = PatternStorage.IndexOf(op.Property.Pattern.Trim());
+                            if (patternNdx < 0)
+                            {
+                                patternNdx = PatternStorage.Count;
+                                PatternStorage.Add(op.Property.Pattern);
+                            }
+
+                            // write out Index
+                            if (secondText.Length > 0)
+                                secondText += "\n";
+                            secondText += $"See pattern index {1 + patternNdx}";
+                        }
+                    }
+
+                    if (hasLen)
+                    {
+                        if (secondText.Length > 0)
+                            secondText += "\n";
+                        if (op.Property?.minLength != null)
+                            secondText += $"Minimum length: {op.Property.minLength.ToString()} ";
+                        if (op.Property?.maxLength != null)
+                            secondText += $"Maximum length: {op.Property.maxLength.ToString()} ";
+                    }
+
+                    // put it in Word (basically it is only about <secondText>)
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell($"", cw[0], verticalMerge: true, verticalMergeRestart: false));
+                    tr.Append(CreateMergedCell(secondText, true, cw[1]));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateCell($"", cw[4], verticalMerge: true, verticalMergeRestart: false));
+                    // tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+
+                    // if skipped dividing line, do not break across pages here
+                    if (skipDividingLine)
+                    {
+                        TableRowProperties trPr = new TableRowProperties(
+                            new CantSplit() // prevent row from splitting across pages
+                        );
+                        tr.Append(trPr);
+                    }
+                }
+            }
+
+            // last row: Key
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateMergedCell("Key of table:\nReq.:    Required.\nCard. if present:    Minimum and maximum cardinality of the JSON value, if value is present.", true, cw[0]));
+                tr.Append(CreateMergedCell("", false, cw[1]));
+                tr.Append(CreateMergedCell("", false, cw[2]));
+                tr.Append(CreateMergedCell("", false, cw[3]));
+                tr.Append(CreateMergedCell("", false, cw[4]));
+                table.Append(tr);
             }
 
             // Before appending the table, add some caption text?
@@ -829,6 +947,133 @@ namespace Yaml2Docx
 
             // Really appending the table
             body.Append(table);
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+        }
+
+        /// <summary>
+        /// Export a table with the stored (long) patterns
+        /// </summary>
+        public void ExportPatternStorage(
+            YamlOpenApi.OpenApiDocument doc,
+            MainDocumentPart mainPart)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = (new[] { substTablRef } ).ToList();
+
+            // Create the table
+            Table table = new Table();
+
+            // Define table properties (1 pt border, full width)
+            TableProperties tblProps = new TableProperties(
+                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }, // 100% width (5000 = 100% in OpenXML)
+                new TableLayout { Type = TableLayoutValues.Fixed }, // <=== FIXED LAYOUT
+                new TableBorders(
+                    new TopBorder { Val = BorderValues.Single, Size = 8 },
+                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
+                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
+                    new RightBorder { Val = BorderValues.Single, Size = 8 },
+                    new InsideHorizontalBorder { Val = BorderValues.None, Size = 8 },
+                    new InsideVerticalBorder { Val = BorderValues.None, Size = 8 }
+                )
+            );
+            table.AppendChild(tblProps);
+
+            // Define column widths (sum ~9360 twips = ~6.5 inches)
+            double cm = 567;
+            int[] cw = { (int)(3 * cm), (int)(17 * cm) };
+
+            //if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
+            //    for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
+            //        cw[i] = (int)(cm * _config.OverviewColumnWidthCm[i]);
+
+            TableGrid tableGrid = new TableGrid();
+            foreach (int width in cw)
+            {
+                tableGrid.Append(new GridColumn() { Width = width.ToString() });
+            }
+            table.Append(tableGrid);
+
+            // 1st row: Column headerHeader 
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("Index", cw[0]));
+                tr.Append(CreateCell("String pattern definition", cw[1]));
+                table.Append(tr);
+            }
+
+            // 2nd.. row: single member
+            for (int pi = 0; pi < PatternStorage.Count; pi++)
+            {
+                var pat = PatternStorage[pi];
+                
+                // put it in Word
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell($"{1+pi}", cw[0], bold: true));
+                tr.Append(CreateCell($"{pat}", cw[1]));
+                table.Append(tr);
+            }
+
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – {_config.PatternTableCaptionPrefix}")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // Really appending the table
+            body.Append(table);
+
+            // clear storage
+            PatternStorage.Clear();
 
             // empty rows
             for (int i = 0; i < _config.NumberEmptyLines; i++)
@@ -1061,27 +1306,37 @@ namespace Yaml2Docx
                 ),
                 new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Top }
             );
+            cell.Append(cellProps);
 
-            // Add font + size formatting
-            Run run = new Run();
-            RunProperties runProps = new RunProperties(
-                new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
-                new FontSize { Val = "16" } // 8 pt
-            );
-
-            if (bold)
-                runProps.Append(new Bold());
-
-            run.Append(runProps);
-            run.Append(new Text(text ?? "") { Space = SpaceProcessingModeValues.Preserve });
-
-            Paragraph paragraph = new Paragraph(run)
+            // prepare Paragraph
+            Paragraph paragraph = new Paragraph()
             {
                 ParagraphProperties = new ParagraphProperties(new SpacingBetweenLines { After = "120" })
             };
 
-            cell.Append(cellProps);
+            // split in multiple lines by '\n'
+            var lines = (text ?? "").Split(new[] { '\n' }, StringSplitOptions.None);
+            foreach (var line in lines)
+            {
+                // Add font + size formatting
+                Run run = new Run();
+                RunProperties runProps = new RunProperties(
+                    new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
+                    new FontSize { Val = "16" } // 8 pt
+                );
+
+                if (bold)
+                    runProps.Append(new Bold());
+
+                run.Append(runProps);
+                run.Append(new Text(line) { Space = SpaceProcessingModeValues.Preserve });
+                if (line != lines.Last())
+                    run.Append(new Break());
+
+                paragraph.Append(run);
+            }
             cell.Append(paragraph);
+
             return cell;
         }
 
