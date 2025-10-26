@@ -852,7 +852,7 @@ namespace Yaml2Docx
                             // write out Index
                             if (secondText.Length > 0)
                                 secondText += "\n";
-                            secondText += $"See pattern index {1 + patternNdx}";
+                            secondText += $"See string pattern index {1 + patternNdx}";
                         }
                     }
 
@@ -989,7 +989,7 @@ namespace Yaml2Docx
 
             // Define column widths (sum ~9360 twips = ~6.5 inches)
             double cm = 567;
-            int[] cw = { (int)(3 * cm), (int)(17 * cm) };
+            int[] cw = { (int)(2 * cm), (int)(17 * cm) };
 
             //if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
             //    for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
@@ -1074,6 +1074,486 @@ namespace Yaml2Docx
 
             // clear storage
             PatternStorage.Clear();
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+        }
+
+        /// <summary>
+        /// Export a single schema type information with originated property bundles 
+        /// </summary>
+        public void ExportSingleHttpOperationDescription(
+            YamlOpenApi.OpenApiDocument doc,
+            MainDocumentPart mainPart,
+            YamlConfig.OperationConfig opConfig,
+            YamlOpenApi.OpenApiOperation op)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            if (op == null)
+                return;
+
+            // try to suppress input parameters in OpenApiOperation
+            if (true && op?.Parameters != null)
+            {
+                var sup = new List<string>();
+                if (_config.SuppressInputs != null)
+                    sup.AddRange(_config.SuppressInputs);
+                if (opConfig.SuppressInputs != null)
+                    sup.AddRange(opConfig.SuppressInputs);
+
+                var toDel = new List<YamlOpenApi.OpenApiParameter>();
+                foreach (var si in sup)
+                    foreach (var x in op.Parameters)
+                        if (si != null && true == x.Name?.Equals(si, StringComparison.InvariantCultureIgnoreCase))
+                            toDel.Add(x);
+
+                foreach (var td in toDel)
+                    op.Parameters.Remove(td);
+            }
+
+            // try remove x-semanticId
+            if (true && op?.SemanticIds != null)
+            {
+                op.SemanticIds = null;
+            }
+
+            // build explanation
+            var explanation = opConfig?.Explanation ?? op?.Summary;
+
+            // need a lambda for filling up responses, later
+            Func<OpenApiResponse, Tuple<OpenApiResponse, string?>> lambdaCreateDereferencedWorkResponse = (resp) =>
+            {
+                var res = resp.Clone();
+                string? pureSchemaName = null;
+
+                // try fill some layout decision
+                if (resp.Ref != null)
+                {
+                    var r = doc.FindComponent<YamlOpenApi.OpenApiResponse>(resp.Ref);
+                    if (r != null)
+                        res.Join(r);
+                    else
+                        pureSchemaName = YamlOpenApi.StripResponseHead(resp.Ref);
+                }
+
+                return new Tuple<OpenApiResponse, string?>(res, pureSchemaName);
+            };
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = (new[] {
+                substTablRef,
+                new Substitution("operation-id", op?.OperationId ?? "", false) }
+            ).ToList();
+
+            // Heading
+            body.AppendChild(CreateParagraph(
+                $"{opConfig?.Heading ?? _config.TableHeadingPrefix} {op?.OperationId}",
+                styleId: $"{_config.YamlHeadingStyle}"));
+
+            // Intro text
+            body.AppendChild(CreateParagraph(
+                $"{opConfig?.Body ?? _config.Body}",
+                styleId: $"{_config.BodyStyle}"));
+
+            // Create the table
+            Table table = new Table();
+
+            // Define table properties (1 pt border, full width)
+            TableProperties tblProps = new TableProperties(
+                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }, // 100% width (5000 = 100% in OpenXML)
+                new TableLayout { Type = TableLayoutValues.Fixed }, // <=== FIXED LAYOUT
+                new TableBorders(
+                    new TopBorder { Val = BorderValues.Single, Size = 8 },
+                    new BottomBorder { Val = BorderValues.Single, Size = 8 },
+                    new LeftBorder { Val = BorderValues.Single, Size = 8 },
+                    new RightBorder { Val = BorderValues.Single, Size = 8 },
+                    new InsideHorizontalBorder { Val = BorderValues.None, Size = 8 },
+                    new InsideVerticalBorder { Val = BorderValues.None, Size = 8 }
+                )
+            );
+            table.AppendChild(tblProps);
+
+            // Approach: evaluate, if a 3- or 5-column design is required
+            var fiveCols = false;
+            if (op?.Responses != null)
+                foreach (var resp in op.Responses)
+                    if (resp.Value != null)
+                    {
+                        var workResp = lambdaCreateDereferencedWorkResponse(resp.Value);
+                        if (workResp.Item1.Headers != null && workResp.Item1.Headers.Count > 0)
+                            fiveCols = true;
+                    }
+            
+
+            // Define column widths (sum ~9360 twips = ~6.5 inches)
+            double cm = 567;
+            var cw = new List<int>(new []{ (int)(3 * cm), (int)(3 * cm), (int)(3 * cm), (int)(3 * cm), (int)(8 * cm) });
+
+            if (_config.InterfaceOpFiveColumnWidthCm != null && _config.InterfaceOpFiveColumnWidthCm.Count >= 5)
+                for (int i = 0; i < Math.Min(5, _config.InterfaceOpFiveColumnWidthCm.Count); i++)
+                    cw[i] = (int)(cm * _config.InterfaceOpFiveColumnWidthCm[i]);
+
+            if (!fiveCols)
+            {
+                cw = new List<int>(new[] { (int)(3 * cm), (int)(3 * cm), (int)(14 * cm), (int)(0.1 * cm), (int)(0.1 * cm) });
+
+                if (_config.InterfaceOpThreeColumnWidthCm != null && _config.InterfaceOpThreeColumnWidthCm.Count >= 5)
+                    for (int i = 0; i < Math.Min(5, _config.InterfaceOpThreeColumnWidthCm.Count); i++)
+                        cw[i] = (int)(cm * _config.InterfaceOpThreeColumnWidthCm[i]);
+            }
+
+            TableGrid tableGrid = new TableGrid();
+            foreach (int width in cw)
+            {
+                tableGrid.Append(new GridColumn() { Width = width.ToString() });
+            }
+            table.Append(tableGrid);
+
+            //
+            // Start
+            //
+
+            // 1st row: Header for interface operation
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("Interface Operation Name ", cw[0]));
+                tr.Append(CreateMergedCell($"{op?.OperationId}", true, cw[1], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[2]));
+                tr.Append(CreateMergedCell("", false, cw[3]));
+                tr.Append(CreateMergedCell("", false, cw[4]));
+                table.Append(tr);
+            }
+
+            // 2nd row: Explanation
+            {
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell("Explanation", cw[0]));
+                tr.Append(CreateMergedCell($"{explanation}", true, cw[1], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[2]));
+                tr.Append(CreateMergedCell("", false, cw[3]));
+                tr.Append(CreateMergedCell("", false, cw[4]));
+                table.Append(tr);
+            }
+
+            //
+            // Request parameters
+            //
+
+            if (op?.Parameters != null && op.Parameters.Count > 0)
+            {
+                // Header for request parameters
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateMergedCell($"Request parameters", true, cw[0], bold: true));
+                    tr.Append(CreateMergedCell("", false, cw[1]));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }
+
+                foreach (var para in op.Parameters)
+                {
+                    // 1st row is always Name + Description + Description value
+                    if (true)
+                    {
+                        TableRow tr = new TableRow();
+                        tr.Append(CreateCell($"{para.Name}", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: true));
+                        tr.Append(CreateMergedCell("Description", false, cw[1]));
+                        tr.Append(CreateMergedCell($"{para.Description}", true, cw[2]));
+                        tr.Append(CreateMergedCell("", false, cw[3]));
+                        tr.Append(CreateMergedCell("", false, cw[4]));
+                        table.Append(tr);
+                    }
+
+                    // 2st row is always (continued) + Required
+                    if (true)
+                    {
+                        TableRow tr = new TableRow();
+                        tr.Append(CreateCell("", cw[0], verticalMerge: true, verticalMergeRestart: false));
+                        tr.Append(CreateMergedCell("Required", false, cw[1]));
+                        tr.Append(CreateMergedCell($"{(para.Required ? "Yes" : "No")}", true, cw[2]));
+                        tr.Append(CreateMergedCell("", false, cw[3]));
+                        tr.Append(CreateMergedCell("", false, cw[4]));
+                        table.Append(tr);
+                    }
+                }
+            }
+
+            //
+            // Request body
+            //
+
+            if (op?.RequestBody?.Content != null && op?.RequestBody.Content.Count > 0)
+            {
+                // Header for request body
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateMergedCell($"Request body", true, cw[0], bold: true));
+                    tr.Append(CreateMergedCell("", false, cw[1]));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }
+
+                // Description
+                if (true)
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell("Description", cw[0]));
+                    tr.Append(CreateMergedCell($"{op.RequestBody.Description}", true, cw[1], bold: true));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }
+
+                // Required
+                if (true)
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell("Required", cw[0]));
+                    tr.Append(CreateMergedCell($"{(op.RequestBody.Required ? "Yes" : "No")}", true, cw[1], bold: true));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }
+
+                // Invisible to the reader: multiple content types
+                foreach (var cntTup in op.RequestBody.Content)
+                {
+                    if (cntTup.Key == null || cntTup.Value == null)
+                        continue;
+
+                    // Content type
+                    if (true)
+                    {
+                        TableRow tr = new TableRow();
+                        tr.Append(CreateCell("Content type", cw[0]));
+                        tr.Append(CreateMergedCell($"{cntTup.Key}", true, cw[1], bold: true));
+                        tr.Append(CreateMergedCell("", false, cw[2]));
+                        tr.Append(CreateMergedCell("", false, cw[3]));
+                        tr.Append(CreateMergedCell("", false, cw[4]));
+                        table.Append(tr);
+                    }
+
+                    // Schema
+                    if (cntTup.Value.Schema?.Ref != null)
+                    {
+                        var schema = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
+
+                        TableRow tr = new TableRow();
+                        tr.Append(CreateCell("Schema", cw[0]));
+                        tr.Append(CreateMergedCell($"{schema}", true, cw[1], bold: true));
+                        tr.Append(CreateMergedCell("", false, cw[2]));
+                        tr.Append(CreateMergedCell("", false, cw[3]));
+                        tr.Append(CreateMergedCell("", false, cw[4]));
+                        table.Append(tr);
+                    }
+                }
+            }
+
+            //
+            // Responses
+            //
+
+            if (op?.Responses != null && op.Responses.Count > 0)
+            {
+                // Header for responses
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateMergedCell($"Responses", true, cw[0], bold: true));
+                    tr.Append(CreateMergedCell("", false, cw[1]));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }
+
+                // Column header for responses
+                {
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell("Status code", cw[0], bold: true));
+                    tr.Append(CreateMergedCell($"Further information", true, cw[1]));
+                    tr.Append(CreateMergedCell("", false, cw[2]));
+                    tr.Append(CreateMergedCell("", false, cw[3]));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    table.Append(tr);
+                }                
+
+                // multiple responses
+                foreach (var resp in op.Responses)
+                {
+                    // working response
+                    if (resp.Value == null)
+                        continue;
+                    var workResp = lambdaCreateDereferencedWorkResponse(resp.Value);
+
+                    // what to show?
+                    var RefOrDescKey = "";
+                    var RefOrDescVal = "";
+                    if (workResp.Item1.Description != null)
+                    {
+                        RefOrDescKey = "Description";
+                        RefOrDescVal = "" + workResp.Item1.Description;
+                    }
+                    else
+                    if (workResp.Item2 != null)
+                    {
+                        RefOrDescKey = "Response";
+                        RefOrDescVal = "" + workResp.Item2;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ERROR!! In {op.OperationId} no valid general info for response {resp.Key}");
+                        continue;
+                    }
+
+                    // HTTP Status code + Description
+                    {
+                        TableRow tr = new TableRow();
+                        tr.Append(CreateCell($"{resp.Key}", cw[0], bold: true));
+                        tr.Append(CreateCell($"{RefOrDescKey}", cw[1]));
+                        tr.Append(CreateMergedCell($"{RefOrDescVal}", true, cw[2], bold: true));
+                        tr.Append(CreateMergedCell("", false, cw[3]));
+                        tr.Append(CreateMergedCell("", false, cw[4]));
+                        table.Append(tr);
+                    }
+
+                    if (workResp.Item1.Headers != null && workResp.Item1.Headers.Count > 0)
+                    {
+                        foreach (var header in workResp.Item1.Headers) {
+                            // Header / name / Description
+                            if (true)
+                            {
+                                TableRow tr = new TableRow();
+                                tr.Append(CreateCell($"", cw[0]));
+                                tr.Append(CreateCell($"Header", cw[1]));
+                                tr.Append(CreateCell($"{header.Key}", cw[2], bold: true));
+                                tr.Append(CreateCell($"Description", cw[3]));
+                                tr.Append(CreateMergedCell($"{header.Value?.Description}", true, cw[4], bold: true));
+                                table.Append(tr);
+                            }
+
+                            // Header / Schema
+                            var dt = YamlOpenApi.StripSchemaHead(header.Value?.Schema?.Ref)
+                                     ?? header.Value?.Schema?.Type;
+
+                            if (dt != null)
+                            {
+                                TableRow tr = new TableRow();
+                                tr.Append(CreateCell($"", cw[0]));
+                                tr.Append(CreateCell($"", cw[1]));
+                                tr.Append(CreateCell($"", cw[2]));
+                                tr.Append(CreateCell($"Data type", cw[3]));
+                                tr.Append(CreateMergedCell($"{dt}", true, cw[4], bold: true));
+                                table.Append(tr);
+                            }
+                        }
+                    }
+
+                    // have a content description in this response
+                    if (workResp.Item1.Content != null && workResp.Item1.Content.Count > 0)
+                        foreach (var respCont in workResp.Item1.Content)
+                        {
+                            if (respCont.Value == null)
+                                continue;
+
+                            // write out content type
+                            if (respCont.Key != null)
+                            {
+                                TableRow tr = new TableRow();
+                                tr.Append(CreateCell("", cw[0]));
+                                tr.Append(CreateCell("Content type", cw[1]));
+                                tr.Append(CreateMergedCell($"{respCont.Key}", true, cw[2]));
+                                tr.Append(CreateMergedCell("", false, cw[3]));
+                                tr.Append(CreateMergedCell("", false, cw[4]));
+                                table.Append(tr);
+                            }
+
+                            // the schema info should link to a schema, e.g. AssetAdministrationShell (200)
+                            // or Result (401). For the first, it would be difficult to go further here, therefore
+                            // simply print out ref nam
+
+                            if (respCont.Value?.Schema?.Ref != null)
+                            {
+                                var rf = YamlOpenApi.StripSchemaHead(respCont.Value.Schema.Ref);
+
+                                TableRow tr = new TableRow();
+                                tr.Append(CreateMergedCell("", false, cw[0]));
+                                tr.Append(CreateCell("Data type", cw[1]));
+                                tr.Append(CreateMergedCell($"{rf}", true, cw[2]));
+                                tr.Append(CreateMergedCell("", false, cw[3]));
+                                tr.Append(CreateMergedCell("", false, cw[4]));
+                                table.Append(tr);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"ERROR!! In {op.OperationId} no valid schema info for response {resp.Key}");
+                            }
+                        }
+                }
+            }            
+
+            //
+            // Before appending the table, add some caption text?
+            //
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – {_config.SchemaTableCaptionPrefix} {op?.OperationId}")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // Really appending the table
+            body.Append(table);
 
             // empty rows
             for (int i = 0; i < _config.NumberEmptyLines; i++)

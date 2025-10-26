@@ -282,6 +282,40 @@ namespace Yaml2Docx
             // just a reference to another response
             [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
             public string? Ref;
+
+            public OpenApiResponse Clone()
+            {
+                var res = new OpenApiResponse();
+                
+                res.Description = Description;
+                res.Headers = new Dictionary<string, OpenApiHeader>(Headers);
+                res.Content = new Dictionary<string, OpenApiContent>(Content);
+
+                return res;
+            }
+
+            public void Join(OpenApiResponse? other)
+            {
+                if (other == null)
+                    return;
+
+                if (Description == null)
+                    Description = other.Description;
+
+                if (other.Headers != null)
+                {
+                    Headers = Headers ?? new Dictionary<string, OpenApiHeader>();
+                    foreach (var x in other.Headers)
+                        Headers.Add(x.Key, x.Value);
+                }
+
+                if (other.Content != null)
+                {
+                    Content = Content ?? new Dictionary<string, OpenApiContent>();
+                    foreach (var x in other.Content)
+                        Content.Add(x.Key, x.Value);
+                }
+            }
         }
 
         public class OpenApiRequestBody
@@ -576,6 +610,11 @@ namespace Yaml2Docx
         public static string? StripSchemaHead(string? refStr)
         {
             return refStr?.Replace("#/components/schemas/", "");
+        }
+
+        public static string? StripResponseHead(string? refStr)
+        {
+            return refStr?.Replace("#/components/responses/", "");
         }
 
         public static bool IsContained(List<string>? list, string? val)

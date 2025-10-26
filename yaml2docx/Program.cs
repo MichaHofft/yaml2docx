@@ -172,6 +172,9 @@ namespace Yaml2Docx
 
                                     // do
                                     wp.ExportSingleYamlCode(mainPart, opConfig, operation);
+
+                                    // test do
+                                    wp.ExportSingleHttpOperationDescription(doc, mainPart, opConfig, operation);
                                 }
                             }
                             else
@@ -206,8 +209,6 @@ namespace Yaml2Docx
                                 foreach (var k in schemaList)
                                 {
                                     // again (but not touch schemas)
-                                    if (k == "Key")
-                                        ;
                                     var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{k}");
                                     if (pbs != null)
                                     {

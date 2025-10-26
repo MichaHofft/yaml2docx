@@ -163,6 +163,8 @@ namespace Yaml2Docx
 
             public List<double>? TableColumnWidthCm;
             public List<double>? OverviewColumnWidthCm;
+            public List<double>? InterfaceOpFiveColumnWidthCm;
+            public List<double>? InterfaceOpThreeColumnWidthCm;
 
             public bool AddTableCaptions = true;
 

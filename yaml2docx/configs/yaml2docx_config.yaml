@@ -418,6 +418,8 @@ createWordFiles:
       # CD missing
       # abstract types are skipped elsewise
       - SubmodelElement
+      # for HTTP operations
+      - Result
       suppressSchemas:
       - DataTypeDefXsd
       - Direction
