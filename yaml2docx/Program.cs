@@ -171,10 +171,12 @@ namespace Yaml2Docx
                                     }
 
                                     // do
-                                    wp.ExportSingleYamlCode(mainPart, opConfig, operation);
+                                    if (act.YamlAsSource)
+                                        wp.ExportSingleYamlCode(mainPart, opConfig, operation);
 
                                     // test do
-                                    wp.ExportSingleHttpOperationDescription(doc, mainPart, opConfig, operation);
+                                    if (act.YamlAsTable)
+                                        wp.ExportSingleHttpOperationDescription(doc, mainPart, opConfig, operation);
                                 }
                             }
                             else

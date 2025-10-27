@@ -526,6 +526,10 @@ namespace Yaml2Docx
             if (body == null)
                 return;
 
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = new List<Substitution>() { substTablRef };
+
             // try to suppress input parameters in OpenApiOperation
             if (true && op?.Parameters != null)
             {
@@ -571,10 +575,60 @@ namespace Yaml2Docx
             // Intro text
             body.AppendChild(CreateParagraph(
                 $"{opConfig?.Body ?? _config.Body}",
-                styleId: $"{_config.BodyStyle}"));
+                styleId: $"{_config.BodyStyle}",
+                substitutions: substs));
 
             // paragraphs
-            var paras = CreateMonospacedParagraph(lines.ToList(), styleId: _config.YamlCodeStyle, isBoxed: true);
+            var paras = CreateMonospacedParagraph(lines.ToList(), styleId: _config.YamlCodeStyle, isBoxed: true);            
+
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – Overview on interface operations")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // now, append the monospaced paragraphs?
             body.Append(paras);
 
             // empty rows
@@ -1159,7 +1213,8 @@ namespace Yaml2Docx
             // Intro text
             body.AppendChild(CreateParagraph(
                 $"{opConfig?.Body ?? _config.Body}",
-                styleId: $"{_config.BodyStyle}"));
+                styleId: $"{_config.BodyStyle}",
+                substitutions: substs));
 
             // Create the table
             Table table = new Table();

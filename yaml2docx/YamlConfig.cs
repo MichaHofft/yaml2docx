@@ -110,6 +110,9 @@ namespace Yaml2Docx
             public string? ParaText;
             public string? ParaStyle;
 
+            public bool YamlAsSource = false;
+            public bool YamlAsTable = false;
+
             public List<string> IncludeSchemas = new();
             public List<string> SuppressSchemas = new();
             public List<string> SuppressMembers = new();

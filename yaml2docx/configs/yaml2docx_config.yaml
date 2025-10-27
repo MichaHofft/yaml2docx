@@ -75,7 +75,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations:
+    useOperations: &anchorIfcOpsAAS
       GetAssetAdministrationShell:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS based on the provided AAS identifier.
         inputs:
@@ -182,7 +182,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations:
+    useOperations: &anchorIfcOpsSM1
       GetSubmodelById:
         body: The interface operation described in Table %table-ref% allows to request for a specific Submodel based on the provided Submodel identifier. 
       PatchSubmodelById:
@@ -222,7 +222,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations:
+    useOperations: &anchorIfcOpsSM2
       GetFileByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS user related file representation as a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath. 
       PutFileByPath:
@@ -253,7 +253,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations:
+    useOperations: &anchorIfcOpsSM3
       GetSubmodelElementByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific element based on a provided Submodel identifier and IdShortPath.
       PostSubmodelElementByPath:
@@ -302,7 +302,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations:
+    useOperations: &anchorIfcOpsSM4
       InvokeOperationSync:
         body: The interface operation described in Table %table-ref% allows to execute a syncronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
       InvokeOperationAsync:
@@ -312,7 +312,7 @@ createWordFiles:
       GetOperationAsyncResult:
         body: The interface operation describe in Table %table-ref% allows to request the result of a completed, executed asynchronous operation represented by an Operation element of a specific Submodel and provided operation handler, which was provided when the asynchronous operation was called. 
   #
-  # Second pass: YAML
+  # Second pass: YAML (currently, both as Code and Table)
   #
   #
   #
@@ -349,35 +349,93 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportYaml
-    useOperations:
-      GetAssetAdministrationShell:
-        body: The mapping of the interface operation described here allows to request for a specific AAS based on the provided AAS identifier.
-      PutAssetAdministrationShell:
-        body: The mapping of the interface operation described here allows to replace/ update a complete specific AAS.
-      GetAllSubmodelReferences:
-        body: The mapping of the interface operation described here allows to return all Submodel references contained in a specific AAS. 
-        explanation: Returns all Submodel references
-      PostSubmodelReference:
-        body: The mapping of the interface operation described here enhances the list of Submodel references of an associated AAS by a new provided Submodel reference.  
-        explanation: Creates a Submodel reference at the Asset Administration Shell
-      DeleteSubmodelReference:
-        body: The mapping of the interface operation described here removes a specific Submodel reference from the list of Submodel references of an associated AAS.
-        explanation: Deletes the Submodel reference from the Asset Administration Shell. Does not delete the Submodel itself!
-      GetAssetInformation:
-        body: The mapping of the interface operation described here returns related asset information of an associated AAS. 
-        explanation: Returns the asset information
-      PutAssetInformation:
-        body: The mapping of the interface operation described here allows to set or update asset-based information of an associated AAS. 
-        explanation: Updates the asset information
-      GetThumbnail:
-        body: The mapping of the interface operation described here allows to request for a thumbnail file of an associated AAS.
-        explanation: Returns the thumbnail file of an associated AAS.
-      PutThumbnail:
-        body: The mapping of the interface operation described here allows to set or update a thumbnail file of an associated AAS. 
-        explanation: Replaces the thumbnail file of an associated AAS.
-      DeleteThumbnail:
-        body: The mapping of the interface operation described here allows to remove a thumbnail file of an associated AAS.
-        explanation: Deletes the thumbnail file of an associated AAS.
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsAAS      
+  #
+  # SM interface 1
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel interface and interface operations w.r.t. to overall Submodel structure
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. to overall Submodel structure. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSM1
+  #
+  # SM interface 2
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel interface and interface operations w.r.t. adding file content
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. adding file content. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSM2
+  #
+  # SM interface 3
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel interface and interface operations w.r.t. nested SubmodelElements
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. nested SubmodelElements. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSM3
+  #
+  # SM interface 4
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel interface and interface operations w.r.t. Operation elements
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. Operation elements. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSM4
   #
   # Third pass: Schemas = Data types
   #
