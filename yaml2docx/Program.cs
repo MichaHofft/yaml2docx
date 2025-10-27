@@ -124,6 +124,9 @@ namespace Yaml2Docx
                                         continue;
                                     }
 
+                                    if (operation.OperationId == "GetAssetAdministrationShellsByQuery")
+                                        ;
+
                                     // do
                                     wp.ExportSingleOperation(mainPart, opConfig, operation);
                                 }

@@ -228,6 +228,9 @@ namespace Yaml2Docx
             public string? Pattern;
             public string? Example;
 
+            public int? MinLength;
+            public int? MaxLength;
+
             public Dictionary<string, OpenApiProperty>? Properties;
             
             public OpenApiItems? Items;

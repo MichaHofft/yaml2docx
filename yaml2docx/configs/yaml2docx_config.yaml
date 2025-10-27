@@ -111,6 +111,10 @@ createWordFiles:
         # TODO IDTA OpenAPI files: Submodel with capital first letter
         explanation: Deletes the Submodel reference from the Asset Administration Shell. Does not delete the Submodel itself!
         suppressInputs: 
+        - level
+        - extent
+        - limit
+        - cursor
         - submodelIdentifier
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
@@ -533,3 +537,36 @@ createWordFiles:
         For specific JSON object member, further specific string patterns are specified by the following table.
       paraStyle: Normal
     - action: ExportPatterns
+  #
+  # QUERY files
+  #
+  #
+  # Interface Operations
+  #
+  - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    listOperations: true
+    actions:
+    - action: ExportPara
+      paraText: Query retrieval interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: These interface operations make it possible to access elements of Asset Administration Shells by a query expression.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations for query retrieval, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsQuery
+      GetAssetAdministrationShellsByQuery:
+        body: The interface operation described in Table %table-ref% allows to request AssetAdministrationShells elements by a query expression.
+        suppressInputs: 
+        - level
+        - extent
+        - cursor

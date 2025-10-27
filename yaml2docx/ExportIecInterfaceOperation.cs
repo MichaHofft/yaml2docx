@@ -118,22 +118,30 @@ namespace Yaml2Docx
                     inputs.AddOrReplace(pi);
                 }
 
-            // ok, suppress
-            if (_config.SuppressInputs != null)
-                foreach (var name in _config.SuppressInputs)
-                    inputs.RemoveByName(name);
-
-            if (_config.SuppressOutputs != null)
-                foreach (var name in _config.SuppressOutputs)
-                    inputs.RemoveByName(name);
-
+            // ok, suppress, BUT EXCLUSIVE in groups
             if (opConfig?.SuppressInputs != null)
+            {
                 foreach (var name in opConfig.SuppressInputs)
                     inputs.RemoveByName(name);
+            }
+            else
+            if (_config.SuppressInputs != null)
+            {
+                foreach (var name in _config.SuppressInputs)
+                    inputs.RemoveByName(name);
+            }
 
             if (_config.SuppressOutputs != null)
+            {
                 foreach (var name in _config.SuppressOutputs)
                     inputs.RemoveByName(name);
+            }
+            else
+            if (_config.SuppressOutputs != null)
+            {
+                foreach (var name in _config.SuppressOutputs)
+                    inputs.RemoveByName(name);
+            }                      
 
             // build explanation
             var explanation = opConfig?.Explanation ?? op?.Summary;
