@@ -643,6 +643,7 @@ createWordFiles:
       - stringValue
       - attributeItem
       - Value
+      - AccessPermissionRule
       schemaNotFollow:
       - logicalExpression
       - matchExpression

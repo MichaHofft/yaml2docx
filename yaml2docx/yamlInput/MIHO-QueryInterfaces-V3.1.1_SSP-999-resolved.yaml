@@ -559,11 +559,24 @@ components:
           additionalProperties: false
         USEFILTER:
           type: string
-      oneOf:
-        - required:
+      # after consulting with ChatGPT and Copilot
+      allOf:
+      - oneOf:
+          - required: 
+            - ACL
+          - required: 
+            - USEACL
+      - oneOf:
+          - required: 
+            - OBJECTS
+          - required: 
+            - USEOBJECTS
+      - oneOf:
+          - required: 
             - FORMULA
-        - required:
+          - required: 
             - USEFORMULA
+
       additionalProperties: false
 
     #

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -814,12 +815,39 @@ namespace Yaml2Docx
             // search again for the schema
             var oneOfGroups = new Dictionary<string, int>();
             var schema = doc.FindComponent<OpenApiSchema>($"#/components/schemas/{schemaName}");
+
+            // the direct case .. will all label with "1"
             if (schema?.OneOf != null && schema.OneOf.Count > 0)
                 foreach (var oo in schema.OneOf)
                     if (oo.Required != null && oo.Required.Count > 0)
                         foreach (var member in oo.Required)
                             if (!oneOfGroups.ContainsKey(member))
                                 oneOfGroups.Add(member, 1);
+
+            // the allOf .. oneOf case .. label with group index
+            if (schema?.AllOf != null && schema.AllOf.Count > 0)
+            {
+                int grpIdx = 1;
+                foreach (var ao in schema.AllOf)
+                {
+                    var hasIncrement = false;
+                    if (ao.OneOf != null && ao.OneOf.Count > 0)
+                    {
+                        foreach (var oo in ao.OneOf)
+                        {
+                            if (oo.Required != null && oo.Required.Count > 0)
+                                foreach (var member in oo.Required)
+                                {
+                                    if (!oneOfGroups.ContainsKey(member))
+                                        oneOfGroups.Add(member, grpIdx);
+                                    hasIncrement = true;
+                                }
+                        }
+                    }
+                    if (hasIncrement)
+                        grpIdx++;
+                }
+            }
 
             // Create the table
             Table table = new Table();
@@ -871,8 +899,8 @@ namespace Yaml2Docx
             {
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell("Member", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: true));
-                tr.Append(CreateCell("Choice(s) of data type", cw[1], bold: true));
-                tr.Append(CreateCell("Only one", cw[2], bold: true));
+                tr.Append(CreateCell("One of data type(s)", cw[1], bold: true));
+                tr.Append(CreateCell("Excl. grp.", cw[2], bold: true));
                 tr.Append(CreateCell("Req.", cw[3], bold: true));
                 tr.Append(CreateCell("Card. if present", cw[4], bold: true));
                 tr.Append(CreateCell("From", cw[5], bold: true, verticalMerge: true, verticalMergeRestart: true));
@@ -915,7 +943,7 @@ namespace Yaml2Docx
                 if (type == null && op.Property?.Ref != null)
                     type = YamlOpenApi.StripSchemaHead(op.Property.Ref.Replace("#/components/schemas/", ""));
 
-                var oneOf = (name != null && (oneOfGroups?.ContainsKey(name) == true) && (oneOfGroups[name] >= 0)) ? "X" : "";
+                var oneOf = (name != null && (oneOfGroups?.ContainsKey(name) == true) && (oneOfGroups[name] >= 0)) ? $"{oneOfGroups[name]}" : "";
                 var req = "no";
                 var card = "0..1";
                 if (op.Required)
@@ -1072,7 +1100,9 @@ namespace Yaml2Docx
             // last row: Key
             {
                 TableRow tr = new TableRow();
-                tr.Append(CreateMergedCell("Key of table:\nReq.:    Required.\nCard. if present:    Minimum and maximum cardinality of the JSON value, if value is present.", true, cw[0]));
+                tr.Append(CreateMergedCell(
+                    "Key to the table:\nExcl. grp.:\tMutually exclusive group.\nReq.:\tRequired.\nCard. if present:\tMinimum and maximum cardinality of the JSON value, if value is present.", 
+                    true, cw[0], tabStopPos: new[] { 3.5 } ));
                 tr.Append(CreateMergedCell("", false, cw[1]));
                 tr.Append(CreateMergedCell("", false, cw[2]));
                 tr.Append(CreateMergedCell("", false, cw[3]));
@@ -1887,6 +1917,64 @@ namespace Yaml2Docx
             return new List<Paragraph>(new[] { firstPara });
         }
 
+        static void AddControlCharedLineToPara(string text, bool bold, Paragraph paragraph)
+        {
+            // split in multiple lines by '\n'
+
+            string pattern = @"([\n\t])";  // Captures the delimiter
+            string[] parts = Regex.Split(text, pattern);
+            for (int i = 0; i < parts.Length; i += 2)
+            {
+                // access info
+                string line = parts[i];
+                string delimiter = (i + 1 < parts.Length) ? parts[i + 1] : "";
+
+                // add font + size formatting to each run
+                Run run = new Run();
+                RunProperties runProps = new RunProperties(
+                    new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
+                    new FontSize { Val = "16" } // 8 pt
+                );
+
+                // general attributes
+                if (bold)
+                    runProps.Append(new Bold());
+
+                // add
+                run.Append(runProps);
+                run.Append(new Text(line) { Space = SpaceProcessingModeValues.Preserve });
+
+                // new line?
+                if (delimiter == "\n")
+                {
+                    if (i < parts.Length - 1)
+                        run.Append(new Break());
+                }
+                else
+                if (delimiter == "\t")
+                {
+                    run.Append(new TabChar());
+                }
+
+                paragraph.Append(run);
+            }
+        }
+
+        public Tabs CreateTabPositions(IEnumerable<double> tabStopPos)
+        {
+            Tabs res = new Tabs();
+            foreach (var tsp in tabStopPos)
+            {
+                TabStop tabStop = new TabStop()
+                {
+                    Val = TabStopValues.Left,                                                           // Alignment: Left, Center, Right, etc.
+                    Position = new DocumentFormat.OpenXml.Int32Value((int)(567.0 * tsp))               // Position in twips (1/20 of a point)
+                };
+                res.Append(tabStop);
+            }
+            return res;
+        }
+
         public TableCell CreateCell(string text, int width, bool bold = false,
             bool verticalMerge = false, bool verticalMergeRestart = true)
         {
@@ -1917,6 +2005,9 @@ namespace Yaml2Docx
                 vm.Val = verticalMergeRestart ? MergedCellValues.Restart : MergedCellValues.Continue;
                 cellProps.AddChild(vm);
             }
+
+
+
             cell.Append(cellProps);
 
             // prepare Paragraph
@@ -1926,32 +2017,14 @@ namespace Yaml2Docx
             };
 
             // split in multiple lines by '\n'
-            var lines = (text ?? "").Split(new[] { '\n' }, StringSplitOptions.None);
-            foreach (var line in lines)
-            {
-                // Add font + size formatting
-                Run run = new Run();
-                RunProperties runProps = new RunProperties(
-                    new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
-                    new FontSize { Val = "16" } // 8 pt
-                );
-
-                if (bold)
-                    runProps.Append(new Bold());
-
-                run.Append(runProps);
-                run.Append(new Text(line) { Space = SpaceProcessingModeValues.Preserve });
-                if (line != lines.Last())
-                    run.Append(new Break());
-
-                paragraph.Append(run);
-            }
+            AddControlCharedLineToPara(text, bold, paragraph);
             cell.Append(paragraph);
                         
             return cell;
         }
 
-        public TableCell CreateMergedCell(string text, bool isStart, int width, bool bold = false)
+        public TableCell CreateMergedCell(string text, bool isStart, int width, bool bold = false,
+            IEnumerable<double>? tabStopPos = null)
         {
             TableCell cell = new TableCell();
 
@@ -1974,6 +2047,7 @@ namespace Yaml2Docx
                 ),
                 new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Top }
             );
+
             cell.Append(cellProps);
 
             // prepare Paragraph
@@ -1982,30 +2056,13 @@ namespace Yaml2Docx
                 ParagraphProperties = new ParagraphProperties(new SpacingBetweenLines { After = "120" })
             };
 
-            // split in multiple lines by '\n'
-            var lines = (text ?? "").Split(new[] { '\n' }, StringSplitOptions.None);
-            foreach (var line in lines)
-            {
-                // Add font + size formatting
-                Run run = new Run();
-                RunProperties runProps = new RunProperties(
-                    new RunFonts { Ascii = "Arial", HighAnsi = "Arial" },
-                    new FontSize { Val = "16" } // 8 pt
-                );
+            if (tabStopPos != null && tabStopPos.Count() > 0)
+                paragraph.ParagraphProperties.Append(CreateTabPositions(tabStopPos));
 
-                if (bold)
-                    runProps.Append(new Bold());
-
-                run.Append(runProps);
-                run.Append(new Text(line) { Space = SpaceProcessingModeValues.Preserve });
-                if (line != lines.Last())
-                    run.Append(new Break());
-
-                paragraph.Append(run);
-            }
+            AddControlCharedLineToPara(text, bold, paragraph);
             cell.Append(paragraph);
 
-            return cell;
+            return cell;            
         }
 
         public static void ListStyleNames(MainDocumentPart? mainPart, string prefix = "")

@@ -210,23 +210,7 @@ namespace Yaml2Docx
                 };
                 return res;
             }
-        }
-
-        public class OpenApiSchemaPart
-        {
-            // Note: this might indicated, that the part class needs to be restructured!!
-            public string? Type;
-            
-            // list of required property names
-            public List<string>? Required;
-
-            // define further properties
-            public Dictionary<string, OpenApiProperty>? Properties;
-
-            // just refer to other schemas to be part of this schema
-            [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
-            public string? Ref;
-        }
+        }        
 
         public class OpenApiSchema
         {
@@ -254,9 +238,9 @@ namespace Yaml2Docx
 
             public List<string>? Enum;
 
-            public List<OpenApiSchemaPart>? AllOf;
+            public List<OpenApiSchema>? AllOf;
 
-            public List<OpenApiSchemaPart>? OneOf;
+            public List<OpenApiSchema>? OneOf;
 
             // list of required property names
             public List<string>? Required;
