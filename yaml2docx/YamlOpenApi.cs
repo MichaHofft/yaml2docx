@@ -49,12 +49,14 @@ namespace Yaml2Docx
             public string? Description;
             public string? Example;
 
-            public int? minItems;
-            public int? maxItems;
+            public int? MinItems;
+            public int? MaxItems;
             public int? minLength;
             public int? maxLength;
 
             public List<string>? Enum;
+
+            public bool? AdditionalProperties;
 
             public OpenApiItems? Items;
 
@@ -72,8 +74,8 @@ namespace Yaml2Docx
                     Pattern = Pattern,
                     Description = Description,
                     Example = Example,
-                    minItems = minItems,
-                    maxItems = maxItems,
+                    MinItems = MinItems,
+                    MaxItems = MaxItems,
                     minLength = minLength,
                     maxLength = maxLength,
                     Ref = Ref
@@ -104,10 +106,10 @@ namespace Yaml2Docx
                 if (Example == null)
                     Example = other.Example;
 
-                if (minItems == null)
-                    minItems = other.minItems;
-                if (maxItems == null)
-                    maxItems = other.maxItems;
+                if (MinItems == null)
+                    MinItems = other.MinItems;
+                if (MaxItems == null)
+                    MaxItems = other.MaxItems;
                 if (minLength == null)
                     minLength = other.minLength;
                 if (maxLength == null)
@@ -135,8 +137,18 @@ namespace Yaml2Docx
             {
                 if (other.Type != null)
                     Type = other.Type;
+                if (other.Format != null)
+                    Format = other.Format;
                 if (other.Enum != null)
                     Enum = other.Enum;
+                if (other.Pattern != null)
+                    Pattern = other.Pattern;
+                if (other.MaxItems != null)
+                    MaxItems = other.MaxItems;
+                if (other.MinItems != null)
+                    MinItems = other.MinItems;
+                if (other.Items != null)
+                    Items = other.Items;
             }
         }
 
@@ -230,6 +242,11 @@ namespace Yaml2Docx
 
             public int? MinLength;
             public int? MaxLength;
+
+            public int? MinItems;
+            public int? MaxItems;
+
+            public bool? AdditionalProperties;
 
             public Dictionary<string, OpenApiProperty>? Properties;
             
@@ -467,14 +484,15 @@ namespace Yaml2Docx
 
             public OpenApiOriginatedPropertyList? RecursiveFindPropertyBundles(
                 string schemaName,
-                HashSet<string>? schemasTouched = null)
+                HashSet<string>? schemasTouched = null,
+                List<string>? schemaNotFollow = null)
             {
                 // any result?
                 var schema = FindComponent<OpenApiSchema>(schemaName);
                 if (schema == null) 
                     return null;
 
-                if (schemaName == "HasKind")
+                if (schemaName == "#/components/schemas/matchExpression")
                     ;
 
                 // ok, start result
@@ -565,15 +583,27 @@ namespace Yaml2Docx
                 if (schema.Properties?.Any() == true)
                     foreach (var sp in schema.Properties)
                     {
+                        if (sp.Key == "$contains")
+                            ;
+
                         // for Ref of property -> join ATTRIBUTES together ..
                         var joinedProp = sp.Value.Clone();
                         if (sp.Value.Ref != null)
                         {
-                            var refSchema = FindComponent<OpenApiSchema>(sp.Value.Ref);
-                            if (refSchema != null)
+                            // follow?
+                            var straightType = YamlOpenApi.StripSchemaHead(sp.Value.Ref);
+                            if (schemaNotFollow != null && straightType != null && schemaNotFollow.Contains(straightType))
                             {
-                                // overtake attributes!
-                                joinedProp.SetFrom(refSchema);
+                                joinedProp.Type = straightType;
+                            }
+                            else
+                            {
+                                var refSchema = FindComponent<OpenApiSchema>(sp.Value.Ref);
+                                if (refSchema != null)
+                                {
+                                    // overtake attributes!
+                                    joinedProp.SetFrom(refSchema);
+                                }
                             }
                         }
 

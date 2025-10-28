@@ -47,7 +47,7 @@ createWordFiles:
   listStyles: true
   readOpenApiFiles:
   #
-  # First pass: Tables for the individual interface operations
+  # First pass: Tables for the individual (technology-neutral) interface operations
   #
   #
   # AAS interface
@@ -55,6 +55,9 @@ createWordFiles:
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     listOperations: false
     actions:
+    - action: ExportPara
+      paraText: Technology neutral definitions
+      paraStyle: berschrift1
     - action: ExportPara
       paraText: AAS administration interface and interface operations
       paraStyle: berschrift2
@@ -339,7 +342,7 @@ createWordFiles:
       paraText: For further details on the interfaces see [3] and [4].
       paraStyle: Normal
     - action: ExportPara
-      paraText: NOTE   In known implementations, parameters for “Limit” and “Cursor” enable pagination of results and parameters for “Level” and “Extend” control extended possibilities towards depth of information. For interoperability, these parameters are noted in the mapping. 
+      paraText: NOTE   In known implementations, parameters for “Limit” and “Cursor” enable pagination of results and parameters for “Level” and “Extend” control extended possibilities towards depth of information. For interoperability, these parameters are not in the mapping. 
       paraStyle: NOTE
     # End of: Extra header for chapter
     - action: ExportPara
@@ -482,7 +485,7 @@ createWordFiles:
       - SubmodelElement
       # for HTTP operations
       - Result
-      suppressSchemas:
+      suppressSchemas: &suppressSchemaList
       - DataTypeDefXsd
       - Direction
       - EntityType
@@ -538,14 +541,17 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportPatterns
   #
+  # First pass: Tables for the individual (technology-neutral) interface operations
+  #
+  #
   # QUERY files
-  #
-  #
-  # Interface Operations
   #
   - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
     listOperations: true
     actions:
+    - action: ExportPara
+      paraText: Technology neutral definitions
+      paraStyle: berschrift1
     - action: ExportPara
       paraText: Query retrieval interface and interface operations
       paraStyle: berschrift2
@@ -570,3 +576,76 @@ createWordFiles:
         - level
         - extent
         - cursor
+  #
+  # Second pass: YAML (currently, both as Code and Table)
+  #
+  #
+  #
+  # QUERY files
+  #
+  - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: HTTP API
+      paraStyle: berschrift1
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: This Annex shows a mapping of interfaces to HTTP APIs (application programming interface). The definitions are for the interoperability of such APIs. The interface operations are described in OpenAPI version 3.0.3 using the YAML format. For more information on YAML see [2], [5]. 
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: For further details on the interfaces see [3] and [4].
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: NOTE   In known implementations, parameters for “Cursor” enable pagination of results and parameters for “Level” and “Extend” control extended possibilities towards depth of information. For interoperability, these parameters are not in the mapping, the “Limit” indeed limits the number of query results.
+      paraStyle: NOTE
+    # End of: Extra header for chapter
+    - action: ExportPara
+      paraText: Query retrieval interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Query retrieval interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsQuery      
+  #
+  # Third pass: Schemas = Data types
+  #
+  #
+  # QUERY files
+  #
+  - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    actions:
+    - action: ExportPara
+      paraText: Serialization of additional data types for query interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: The following sub sections depict the serialization of specific data types required as input and output data of interface operations. In particular, the serialization into JSON data interchange syntax (ISO/ IEC 21778:2017) is targeted.
+      paraStyle: Normal
+    - action: ExportSchema
+      skipIfVisited: true
+      suppressSchemas: *suppressSchemaList
+      includeSchemas: 
+      - GetAssetAdministrationShellsResult
+      - PagedResult
+      - QueryExpression
+      - logicalExpression
+      - matchExpression
+      - stringValue
+      - attributeItem
+      - Value
+      schemaNotFollow:
+      - logicalExpression
+      - matchExpression
+      - stringValue
+      - Value
+      - attributeItem

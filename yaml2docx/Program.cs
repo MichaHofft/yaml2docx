@@ -17,6 +17,10 @@ namespace Yaml2Docx
             //var pg = new YamlPlayground();
             //pg.Run();
 
+            // list of already documented schema names
+            var visitedSchemaExportTables = new HashSet<string>();
+            var visitedSchemaExportSchema = new HashSet<string>();
+
             // load configuration
             var config = YamlConfig.Load(".\\configs\\yaml2docx_config.yaml");
             var wp = new ExportIecInterfaceOperation(config);
@@ -124,6 +128,12 @@ namespace Yaml2Docx
                                         continue;
                                     }
 
+                                    // already visited
+                                    if (act.SkipIfVisited && visitedSchemaExportTables.Contains(operationId))
+                                        continue;
+                                    visitedSchemaExportTables.Add(operationId);
+
+                                    // debug
                                     if (operation.OperationId == "GetAssetAdministrationShellsByQuery")
                                         ;
 
@@ -173,6 +183,9 @@ namespace Yaml2Docx
                                         continue;
                                     }
 
+                                    if (operation.OperationId == "GetAssetAdministrationShellsByQuery")
+                                        ;
+
                                     // do
                                     if (act.YamlAsSource)
                                         wp.ExportSingleYamlCode(mainPart, opConfig, operation);
@@ -213,13 +226,20 @@ namespace Yaml2Docx
                                 // visit them
                                 foreach (var k in schemaList)
                                 {
+                                    // already globally visited?
+                                    if (act.SkipIfVisited && visitedSchemaExportSchema.Contains(k))
+                                        continue;
+                                    visitedSchemaExportSchema.Add(k);
+
                                     // again (but not touch schemas)
-                                    var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{k}");
+                                    var pbs = doc.RecursiveFindPropertyBundles($"#/components/schemas/{k}", 
+                                        schemaNotFollow: act.SchemaNotFollow);
                                     if (pbs != null)
                                     {
                                         Console.WriteLine($"    Schema to be documented: {k} .. FOUND!");
                                         wp.ExportSinglePropertyBundle(doc, mainPart, k, pbs,
-                                            suppressMembers: act.SuppressMembers);
+                                            suppressMembers: act.SuppressMembers,
+                                            schemaNotFollow: act.SchemaNotFollow);
                                     }
                                     else
                                     {

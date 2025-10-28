@@ -113,6 +113,10 @@ namespace Yaml2Docx
             public bool YamlAsSource = false;
             public bool YamlAsTable = false;
 
+            public bool SkipIfVisited = false;
+
+            public List<string>? SchemaNotFollow;
+
             public List<string> IncludeSchemas = new();
             public List<string> SuppressSchemas = new();
             public List<string> SuppressMembers = new();

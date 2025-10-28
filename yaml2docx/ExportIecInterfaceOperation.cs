@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Extensions;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -101,7 +102,7 @@ namespace Yaml2Docx
             if (opConfig?.Outputs != null)
                 outputs.AddOrReplace(opConfig.Outputs);
 
-            // turn the operation's paramters into inputs
+            // turn the operation's parameters into inputs
             if (op.Parameters != null)
                 foreach (var param in op.Parameters)
                 {
@@ -217,6 +218,10 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
+            //
+            // Input
+            //
+
             // 3rd row: Input
             {
                 TableRow tr = new TableRow();
@@ -252,7 +257,42 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
-            // 6th row: Input parameters
+            //
+            // Request body .. treated as input
+            //
+
+            if (op?.RequestBody?.Content != null && op?.RequestBody.Content.Count > 0)
+            {
+                // try to compile appropriate information
+                var name = "requestBody";
+                var desc = op.RequestBody.Description ?? "\u2014";
+                var mand = $"{(op.RequestBody.Required ? "yes" : "no")}";
+                var type = "\u2014";
+                var card = $"{(op.RequestBody.Required ? "1" : "0..1")}";
+
+                // Invisible to the reader: multiple content types/ schemas, take the first as type
+                foreach (var cntTup in op.RequestBody.Content)
+                    if (cntTup.Value?.Schema?.Ref != null)
+                    {
+                        type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
+                        break;
+                    }
+
+                // do it
+                TableRow tr = new TableRow();
+                tr.Append(CreateCell($"{name}", cw[0]));
+                tr.Append(CreateCell($"{desc}", cw[1]));
+                tr.Append(CreateCell($"{mand}", cw[2]));
+                tr.Append(CreateCell($"{type}", cw[3]));
+                tr.Append(CreateCell($"{card}", cw[4]));
+                table.Append(tr);
+            }
+
+            //
+            // Output
+            //
+
+            // 6th row: Output parameters
             if (outputs.Count > 0)
             {
                 TableRow tr = new TableRow();
@@ -264,7 +304,7 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
-            // 7th.. row: Single input parameter
+            // 7th.. row: Single output parameter
             foreach (var pi in outputs)
             {
                 TableRow tr = new TableRow();
@@ -275,6 +315,47 @@ namespace Yaml2Docx
                 tr.Append(CreateCell(pi.Card, cw[4]));
                 table.Append(tr);
             }
+
+            //
+            // Response body .. treated as output
+            //
+
+            if (op?.Responses != null && op?.Responses.Count > 0)
+                foreach (var resp in op.Responses)
+                {
+                    // filter out the 200 range
+                    if (resp.Key?.StartsWith("2") != true || resp.Value == null)
+                        continue;
+
+                    // try to compile appropriate information
+                    var name = "responseBody";
+                    var desc = resp.Value.Description ?? "\u2014";
+                    var mand = "yes";
+                    var type = "\u2014";
+                    var card = "1";
+
+                    // Invisible to the reader: multiple content types/ schemas, take the first as type
+                    if (resp.Value.Content != null)
+                        foreach (var cntTup in resp.Value.Content)
+                            if (cntTup.Value?.Schema?.Ref != null)
+                            {
+                                type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
+                                break;
+                            }
+
+                    // do it
+                    TableRow tr = new TableRow();
+                    tr.Append(CreateCell($"{name}", cw[0]));
+                    tr.Append(CreateCell($"{desc}", cw[1]));
+                    tr.Append(CreateCell($"{mand}", cw[2]));
+                    tr.Append(CreateCell($"{type}", cw[3]));
+                    tr.Append(CreateCell($"{card}", cw[4]));
+                    table.Append(tr);
+                }
+
+            //
+            // Caption
+            //
 
             // Before appending the table, add some caption text?
             if (_config.AddTableCaptions)
@@ -527,12 +608,18 @@ namespace Yaml2Docx
         public void ExportSingleYamlCode(
             MainDocumentPart mainPart,
             YamlConfig.OperationConfig opConfig,
-            YamlOpenApi.OpenApiOperation op)
+            YamlOpenApi.OpenApiOperation origOp)
         {
             // access
             Body? body = mainPart.Document.Body;
             if (body == null)
                 return;
+
+            if (origOp == null)
+                return;
+
+            // work on a copy
+            var op = origOp.Copy();
 
             // generate a table-reference
             var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
@@ -542,11 +629,12 @@ namespace Yaml2Docx
             if (true && op?.Parameters != null)
             {
                 var sup = new List<string>();
-                if (_config.SuppressInputs != null)
-                    sup.AddRange(_config.SuppressInputs);
                 if (opConfig.SuppressInputs != null)
                     sup.AddRange(opConfig.SuppressInputs);
-
+                else
+                if (_config.SuppressInputs != null)
+                    sup.AddRange(_config.SuppressInputs);
+                
                 var toDel = new List<YamlOpenApi.OpenApiParameter>();
                 foreach (var si in sup) 
                     foreach (var x in op.Parameters)
@@ -655,7 +743,8 @@ namespace Yaml2Docx
             MainDocumentPart mainPart,
             string schemaName,
             OpenApiOriginatedPropertyList oplist,
-            List<string>? suppressMembers = null)
+            List<string>? suppressMembers = null,
+            List<string>? schemaNotFollow = null)
         {
             // access
             Body? body = mainPart.Document.Body;
@@ -796,7 +885,8 @@ namespace Yaml2Docx
                 var hasEnum = (op.Property?.Enum != null && op.Property.Enum.Count > 0);
                 var hasPattern = (op.Property?.Pattern != null && op.Property.Pattern.Length > 0);
                 var hasLen = (op.Property?.minLength != null || op.Property?.maxLength != null);
-                var needOf2ndRow = hasEnum || hasPattern || hasLen;
+                var hasFormat = (op.Property?.Format != null && op.Property.Format.Length > 0);
+                var needOf2ndRow = hasEnum || hasPattern || hasLen || hasFormat;
 
                 // skip member
                 if (op.Name != null && suppressMembers?.Contains(op.Name) == true)
@@ -821,23 +911,26 @@ namespace Yaml2Docx
                     type = YamlOpenApi.StripSchemaHead(op.Property.Items.Ref);
                     var min = "0";
                     var max = "*";
-                    if (op.Property.minItems != null)
-                        min = op.Property.minItems.ToString() ?? "0";
-                    if (op.Property.maxItems != null)
-                        max = op.Property.maxItems.ToString() ?? "0";
+                    if (op.Property.MinItems != null)
+                        min = op.Property.MinItems.ToString() ?? "0";
+                    if (op.Property.MaxItems != null)
+                        max = op.Property.MaxItems.ToString() ?? "0";
                     card = $"{min}..{max}";
                 }
 
                 // expand type??
-                var typeComp = doc.FindComponent<YamlOpenApi.OpenApiSchema>("#/components/schemas/" + type);
-                // is a one of
-                if (typeComp != null && typeComp.OneOf != null && typeComp.OneOf.Count > 0)
+                if (type != null && (schemaNotFollow == null || !schemaNotFollow.Contains(type)))
                 {
-                    var types = new List<string>();
-                    foreach (var one in typeComp.OneOf)
-                        if (one?.Ref != null)
-                            types.Add(YamlOpenApi.StripSchemaHead(one.Ref) ?? "?");
-                    type = string.Join("\n", types);
+                    var typeComp = doc.FindComponent<YamlOpenApi.OpenApiSchema>("#/components/schemas/" + type);
+                    // is a one of
+                    if (typeComp != null && typeComp.OneOf != null && typeComp.OneOf.Count > 0)
+                    {
+                        var types = new List<string>();
+                        foreach (var one in typeComp.OneOf)
+                            if (one?.Ref != null)
+                                types.Add(YamlOpenApi.StripSchemaHead(one.Ref) ?? "?");
+                        type = string.Join("\n", types);
+                    }
                 }
 
                 // skip the "top" deviding line to above "from"?
@@ -926,6 +1019,13 @@ namespace Yaml2Docx
                             secondText += $"Minimum length: {op.Property.minLength.ToString()} ";
                         if (op.Property?.maxLength != null)
                             secondText += $"Maximum length: {op.Property.maxLength.ToString()} ";
+                    }
+
+                    if (hasFormat)
+                    {
+                        if (secondText.Length > 0)
+                            secondText += "\n";
+                        secondText += $"Format: {op.Property?.Format} ";
                     }
 
                     // put it in Word (basically it is only about <secondText>)
@@ -1149,24 +1249,28 @@ namespace Yaml2Docx
             YamlOpenApi.OpenApiDocument doc,
             MainDocumentPart mainPart,
             YamlConfig.OperationConfig opConfig,
-            YamlOpenApi.OpenApiOperation op)
+            YamlOpenApi.OpenApiOperation origOp)
         {
             // access
             Body? body = mainPart.Document.Body;
             if (body == null)
                 return;
 
-            if (op == null)
+            if (origOp == null)
                 return;
 
-            // try to suppress input parameters in OpenApiOperation
+            // work on a copy
+            var op = origOp.Copy();
+
+            // try to suppress input parameters in OpenApiOperation (have exclusive)
             if (true && op?.Parameters != null)
             {
                 var sup = new List<string>();
-                if (_config.SuppressInputs != null)
-                    sup.AddRange(_config.SuppressInputs);
                 if (opConfig.SuppressInputs != null)
                     sup.AddRange(opConfig.SuppressInputs);
+                else 
+                if (_config.SuppressInputs != null)
+                    sup.AddRange(_config.SuppressInputs);
 
                 var toDel = new List<YamlOpenApi.OpenApiParameter>();
                 foreach (var si in sup)
@@ -1341,7 +1445,7 @@ namespace Yaml2Docx
                         TableRow tr = new TableRow();
                         tr.Append(CreateCell("", cw[0], verticalMerge: true, verticalMergeRestart: false));
                         tr.Append(CreateMergedCell("Required", false, cw[1]));
-                        tr.Append(CreateMergedCell($"{(para.Required ? "Yes" : "No")}", true, cw[2]));
+                        tr.Append(CreateMergedCell($"{(para.Required ? "yes" : "no")}", true, cw[2]));
                         tr.Append(CreateMergedCell("", false, cw[3]));
                         tr.Append(CreateMergedCell("", false, cw[4]));
                         table.Append(tr);
@@ -1383,7 +1487,7 @@ namespace Yaml2Docx
                 {
                     TableRow tr = new TableRow();
                     tr.Append(CreateCell("Required", cw[0]));
-                    tr.Append(CreateMergedCell($"{(op.RequestBody.Required ? "Yes" : "No")}", true, cw[1], bold: true));
+                    tr.Append(CreateMergedCell($"{(op.RequestBody.Required ? "yes" : "no")}", true, cw[1], bold: true));
                     tr.Append(CreateMergedCell("", false, cw[2]));
                     tr.Append(CreateMergedCell("", false, cw[3]));
                     tr.Append(CreateMergedCell("", false, cw[4]));
