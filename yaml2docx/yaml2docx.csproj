@@ -20,13 +20,12 @@
     <None Update="templates\IEC_template.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="yamlInput\Readme.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="yamlInput\" />
   </ItemGroup>
 
 </Project>

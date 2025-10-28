@@ -807,6 +807,20 @@ namespace Yaml2Docx
                     return string.Compare(o1.Name, o2.Name, StringComparison.InvariantCultureIgnoreCase);
             });
 
+            if (schemaName?.Contains("logicalExpression") == true)
+                ;
+
+            // for the special case oneOf .. required : check for "oneOfGroups"
+            // search again for the schema
+            var oneOfGroups = new Dictionary<string, int>();
+            var schema = doc.FindComponent<OpenApiSchema>($"#/components/schemas/{schemaName}");
+            if (schema?.OneOf != null && schema.OneOf.Count > 0)
+                foreach (var oo in schema.OneOf)
+                    if (oo.Required != null && oo.Required.Count > 0)
+                        foreach (var member in oo.Required)
+                            if (!oneOfGroups.ContainsKey(member))
+                                oneOfGroups.Add(member, 1);
+
             // Create the table
             Table table = new Table();
 
@@ -827,7 +841,7 @@ namespace Yaml2Docx
 
             // Define column widths (sum ~9360 twips = ~6.5 inches)
             double cm = 567;
-            int[] cw = { (int)(4 * cm), (int)(4 * cm), (int)(1 * cm), (int)(1.5 * cm), (int)(3 * cm) };
+            int[] cw = { (int)(4 * cm), (int)(4 * cm), (int)(1 * cm), (int)(1 * cm), (int)(1.5 * cm), (int)(3 * cm) };
 
             //if (_config.OverviewColumnWidthCm != null && _config.OverviewColumnWidthCm.Count >= 2)
             //    for (int i = 0; i < Math.Min(2, _config.OverviewColumnWidthCm.Count); i++)
@@ -849,6 +863,7 @@ namespace Yaml2Docx
                 tr.Append(CreateMergedCell("", false, cw[2]));
                 tr.Append(CreateMergedCell("", false, cw[3]));
                 tr.Append(CreateMergedCell("", false, cw[4]));
+                tr.Append(CreateMergedCell("", false, cw[5]));
                 table.Append(tr);
             }
 
@@ -856,10 +871,11 @@ namespace Yaml2Docx
             {
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell("Member", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: true));
-                tr.Append(CreateCell("One of data type(s)", cw[1], bold: true));
-                tr.Append(CreateCell("Req.", cw[2], bold: true));
-                tr.Append(CreateCell("Card. if present", cw[3], bold: true));
-                tr.Append(CreateCell("From", cw[4], bold: true, verticalMerge: true, verticalMergeRestart: true));
+                tr.Append(CreateCell("Choice(s) of data type", cw[1], bold: true));
+                tr.Append(CreateCell("Only one", cw[2], bold: true));
+                tr.Append(CreateCell("Req.", cw[3], bold: true));
+                tr.Append(CreateCell("Card. if present", cw[4], bold: true));
+                tr.Append(CreateCell("From", cw[5], bold: true, verticalMerge: true, verticalMergeRestart: true));
                 table.Append(tr);
             }
 
@@ -870,6 +886,7 @@ namespace Yaml2Docx
                 tr.Append(CreateMergedCell("Further specification", true, cw[1], bold: true));
                 tr.Append(CreateMergedCell("", false, cw[2], bold: true));
                 tr.Append(CreateMergedCell("", false, cw[3], bold: true));
+                tr.Append(CreateMergedCell("", false, cw[4], bold: true));
                 tr.Append(CreateCell("", cw[4], bold: true, verticalMerge: true, verticalMergeRestart: false));
                 table.Append(tr);
             }
@@ -898,6 +915,7 @@ namespace Yaml2Docx
                 if (type == null && op.Property?.Ref != null)
                     type = YamlOpenApi.StripSchemaHead(op.Property.Ref.Replace("#/components/schemas/", ""));
 
+                var oneOf = (name != null && (oneOfGroups?.ContainsKey(name) == true) && (oneOfGroups[name] >= 0)) ? "X" : "";
                 var req = "no";
                 var card = "0..1";
                 if (op.Required)
@@ -946,9 +964,10 @@ namespace Yaml2Docx
                     TableRow tr = new TableRow();
                     tr.Append(CreateCell($"{name}", cw[0], bold: true, verticalMerge: needOf2ndRow, verticalMergeRestart: needOf2ndRow));
                     tr.Append(CreateCell($"{type}", cw[1]));
-                    tr.Append(CreateCell($"{req}", cw[2]));
-                    tr.Append(CreateCell($"{card}", cw[3]));
-                    tr.Append(CreateCell($"{(skipDividingLine ? "" : from)}", cw[4], verticalMerge: true, verticalMergeRestart: !skipDividingLine));
+                    tr.Append(CreateCell($"{oneOf}", cw[2]));
+                    tr.Append(CreateCell($"{req}", cw[3]));
+                    tr.Append(CreateCell($"{card}", cw[4]));
+                    tr.Append(CreateCell($"{(skipDividingLine ? "" : from)}", cw[5], verticalMerge: true, verticalMergeRestart: !skipDividingLine));
                     table.Append(tr);
 
                     // if skipped dividing line, do not break across pages here
@@ -1034,7 +1053,8 @@ namespace Yaml2Docx
                     tr.Append(CreateMergedCell(secondText, true, cw[1]));
                     tr.Append(CreateMergedCell("", false, cw[2]));
                     tr.Append(CreateMergedCell("", false, cw[3]));
-                    tr.Append(CreateCell($"", cw[4], verticalMerge: true, verticalMergeRestart: false));
+                    tr.Append(CreateMergedCell("", false, cw[4]));
+                    tr.Append(CreateCell($"", cw[5], verticalMerge: true, verticalMergeRestart: false));
                     // tr.Append(CreateMergedCell("", false, cw[4]));
                     table.Append(tr);
 
@@ -1057,6 +1077,7 @@ namespace Yaml2Docx
                 tr.Append(CreateMergedCell("", false, cw[2]));
                 tr.Append(CreateMergedCell("", false, cw[3]));
                 tr.Append(CreateMergedCell("", false, cw[4]));
+                tr.Append(CreateMergedCell("", false, cw[5]));
                 table.Append(tr);
             }
 
