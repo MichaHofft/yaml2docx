@@ -83,12 +83,12 @@ components:
           type: string
           pattern: ^id$
         $condition:
-          $ref: "#/components/schemas/logicalExpression"
+          $ref: "#/components/schemas/LogicalExpression"
       required:
         - $condition
       additionalProperties: false
 
-    DEFATTRIBUTES:
+    DefAttributes:
       type: object
       properties:
         name:
@@ -96,13 +96,13 @@ components:
         attributes:
           type: array
           items:
-            $ref: "#/components/schemas/attributeItem"
+            $ref: "#/components/schemas/AttributeItem"
       required:
         - name
         - attributes
       additionalProperties: false
 
-    DEFACLS:
+    DefACLs:
       type: object
       properties:
         name:
@@ -114,7 +114,7 @@ components:
         - acl
       additionalProperties: false
     
-    DEFOBJECTS:
+    DefObjects:
       type: object
       properties:
         name:
@@ -122,7 +122,7 @@ components:
         objects:
           type: array
           items:
-            $ref: "#/components/schemas/objectItem"
+            $ref: "#/components/schemas/ObjectItem"
         USEOBJECTS:
           type: array
           items:
@@ -136,13 +136,13 @@ components:
             - USEOBJECTS
       additionalProperties: false
 
-    DEFFORMULAS:
+    DefFormulas:
       type: object
       properties:
         name:
           type: string
         formula:
-          $ref: "#/components/schemas/logicalExpression"
+          $ref: "#/components/schemas/LogicalExpression"
       required:
         - name
         - formula
@@ -151,22 +151,22 @@ components:
     AllAccessPermissionRules:
       type: object
       properties:
-        DEFATTRIBUTES:
+        DefAttributes:
           type: array
           items:
-            $ref: "#/components/schemas/DEFATTRIBUTES"          
-        DEFACLS:
+            $ref: "#/components/schemas/DefAttributes"          
+        DefACLs:
           type: array
           items:
-            $ref: "#/components/schemas/DEFACLS"
-        DEFOBJECTS:
+            $ref: "#/components/schemas/DefACLs"
+        DefObjects:
           type: array
           items:
-            $ref: "#/components/schemas/DEFOBJECTS"
-        DEFFORMULAS:
+            $ref: "#/components/schemas/DefObjects"
+        DefFormulas:
           type: array
           items:
-            $ref: "#/components/schemas/DEFFORMULAS"
+            $ref: "#/components/schemas/DefFormulas"
         rules:
           type: array
           items:
@@ -191,39 +191,39 @@ components:
     #
     # DEFINITIONS
     #
-    standardString:
+    StandardString:
       type: string
       pattern: ^(?!\$).*
-    modelStringPattern:
+    ModelStringPattern:
       type: string
       pattern: |
         ^((?:\$aas#(?:idShort|id|assetInformation\.assetKind|assetInformation\.assetType|assetInformation\.globalAssetId|assetInformation\.(?:specificAssetIds  (\[[0-9]*\])(?:\.(?:name|value|externalSubjectId(?:\.type|\.keys\[\d*\](?:\.(?:type|value))?)?)?)|submodels\.(?:type|keys\[\d*\](?:\.(?:type|value))?))|  submodels\.(type|keys\[\d*\](?:\.(type|value))?)))|(?:\$sm#(?:semanticId(?:\.type|\.keys\[\d*\](?:\.(type|value))?)?|idShort|id))|(?:\$sme(?:\.[a-zA-Z][a-zA-  Z0-9_]*(\[[0-9]*\])?(?:\.[a-zA-Z][a-zA-Z0-9_]*(\[[0-9]*\])?)*)?#(?:semanticId(?:\.type|\.keys\[\d*\](?:\.(type|value))?)?|idShort|value|valueType|language))|  (?:\$cd#(?:idShort|id))|(?:\$aasdesc#(?:idShort|id|assetKind|assetType|globalAssetId|specificAssetIds(\[[0-9]*\])?(?:\.(name|value|externalSubjectId(?:\. type| \.keys\[\d*\](?:\.(type|value))?)?)?)|endpoints(\[[0-9]*\])\.(interface|protocolinformation\.href)|submodelDescriptors(\[[0-9]*\])\.(semanticId(?: \.type|\.keys \[\d*\](?:\.(type|value))?)?|idShort|id|endpoints(\[[0-9]*\])\.(interface|protocolinformation\.href))))|(?:\$smdesc#(?:semanticId(?:\.type| \.keys\[\d*\](?:\. (type|value))?)?|idShort|id|endpoints(\[[0-9]*\])\.(interface|protocolinformation\.href))))$
-    hexLiteralPattern:
+    HexLiteralPattern:
       type: string
       pattern: ^16#[0-9A-F]+$
-    dateTimeLiteralPattern:
+    DateTimeLiteralPattern:
       type: string
       format: date-time
-    timeLiteralPattern:
+    TimeLiteralPattern:
       type: string
       pattern: ^[0-9][0-9]:[0-9][0-9](:[0-9][0-9])?$
     Value:
       type: object
       properties:
         $field:
-          $ref: "#/components/schemas/modelStringPattern"
+          $ref: "#/components/schemas/ModelStringPattern"
         $strVal:
-          $ref: "#/components/schemas/standardString"
+          $ref: "#/components/schemas/StandardString"
         $attribute:
-          $ref: "#/components/schemas/attributeItem"
+          $ref: "#/components/schemas/AttributeItem"
         $numVal:
           type: number
         $hexVal:
-          $ref: "#/components/schemas/hexLiteralPattern"
+          $ref: "#/components/schemas/HexLiteralPattern"
         $dateTimeVal:
-          $ref: "#/components/schemas/dateTimeLiteralPattern"
+          $ref: "#/components/schemas/DateTimeLiteralPattern"
         $timeVal:
-          $ref: "#/components/schemas/timeLiteralPattern"
+          $ref: "#/components/schemas/TimeLiteralPattern"
         $boolean:
           type: boolean
         $strCast:
@@ -239,13 +239,13 @@ components:
         $timeCast:
           $ref: "#/components/schemas/Value"
         $dayOfWeek:
-          $ref: "#/components/schemas/dateTimeLiteralPattern"
+          $ref: "#/components/schemas/DateTimeLiteralPattern"
         $dayOfMonth:
-          $ref: "#/components/schemas/dateTimeLiteralPattern"
+          $ref: "#/components/schemas/DateTimeLiteralPattern"
         $month:
-          $ref: "#/components/schemas/dateTimeLiteralPattern"
+          $ref: "#/components/schemas/DateTimeLiteralPattern"
         $year:
-          $ref: "#/components/schemas/dateTimeLiteralPattern"
+          $ref: "#/components/schemas/DateTimeLiteralPattern"
       oneOf:
         - required:
             - $field
@@ -284,17 +284,17 @@ components:
         - required:
             - $year
       additionalProperties: false
-    stringValue:
+    StringValue:
       type: object
       properties:
         $field:
-          $ref: "#/components/schemas/modelStringPattern"
+          $ref: "#/components/schemas/ModelStringPattern"
         $strVal:
-          $ref: "#/components/schemas/standardString"
+          $ref: "#/components/schemas/StandardString"
         $strCast:
           $ref: "#/components/schemas/Value"
         $attribute:
-          $ref: "#/components/schemas/attributeItem"
+          $ref: "#/components/schemas/AttributeItem"
       oneOf:
         - required:
             - $field
@@ -305,46 +305,46 @@ components:
         - required:
             - $attribute
       additionalProperties: false
-    comparisonItems:
+    ComparisonItems:
       type: array
       minItems: 2
       maxItems: 2
       items:
         $ref: "#/components/schemas/Value"
-    stringItems:
+    StringItems:
       type: array
       minItems: 2
       maxItems: 2
       items:
-        $ref: "#/components/schemas/stringValue"
-    matchExpression:
+        $ref: "#/components/schemas/StringValue"
+    MatchExpression:
       type: object
       properties:
         $match:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/matchExpression"
+            $ref: "#/components/schemas/MatchExpression"
         $eq:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $ne:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $gt:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $ge:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $lt:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $le:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $contains:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $starts-with:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $ends-with:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $regex:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $boolean:
           type: boolean
       oneOf:
@@ -373,46 +373,46 @@ components:
         - required:
             - $match
       additionalProperties: false
-    logicalExpression:
+    LogicalExpression:
       type: object
       properties:
         $and:
           type: array
           minItems: 2
           items:
-            $ref: "#/components/schemas/logicalExpression"
+            $ref: "#/components/schemas/LogicalExpression"
         $match:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/matchExpression"
+            $ref: "#/components/schemas/MatchExpression"
         $or:
           type: array
           minItems: 2
           items:
-            $ref: "#/components/schemas/logicalExpression"
+            $ref: "#/components/schemas/LogicalExpression"
         $not:
-          $ref: "#/components/schemas/logicalExpression"
+          $ref: "#/components/schemas/LogicalExpression"
         $eq:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $ne:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $gt:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $ge:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $lt:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $le:
-          $ref: "#/components/schemas/comparisonItems"
+          $ref: "#/components/schemas/ComparisonItems"
         $contains:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $starts-with:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $ends-with:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $regex:
-          $ref: "#/components/schemas/stringItems"
+          $ref: "#/components/schemas/StringItems"
         $boolean:
           type: boolean
       oneOf:
@@ -447,135 +447,135 @@ components:
         - required:
             - $match
       additionalProperties: false
-    attributeItem:
+    AttributeItem:
       oneOf:
         - required:
-            - CLAIM
+            - claim
         - required:
-            - GLOBAL
+            - global
         - required:
-            - REFERENCE
+            - reference
       properties:
-        CLAIM:
+        claim:
           type: string
-        GLOBAL:
+        global:
           type: string
           enum:
-            - LOCALNOW
-            - UTCNOW
-            - CLIENTNOW
-            - ANONYMOUS
-        REFERENCE:
+            - LocalNow
+            - UtcNow
+            - ClientNow
+            - Anonymous
+        reference:
           type: string
       additionalProperties: false
-    objectItem:
+    ObjectItem:
       oneOf:
         - required:
-            - ROUTE
+            - route
         - required:
-            - IDENTIFIABLE
+            - identifiable
         - required:
-            - REFERABLE
+            - referable
         - required:
-            - FRAGMENT
+            - fragment
         - required:
-            - DESCRIPTOR
+            - descriptor
       properties:
-        ROUTE:
+        route:
           type: string
-        IDENTIFIABLE:
+        identifiable:
           type: string
-        REFERABLE:
+        referable:
           type: string
-        FRAGMENT:
+        fragment:
           type: string
-        DESCRIPTOR:
+        descriptor:
           type: string
       additionalProperties: false
-    rightsEnum:
+    RightsEnum:
       type: string
       enum:
-        - CREATE
-        - READ
-        - UPDATE
-        - DELETE
-        - EXECUTE
-        - VIEW
-        - ALL
-        - TREE
+        - Create
+        - Read
+        - Update
+        - Delete
+        - Execute
+        - View
+        - All
+        - Tree
       additionalProperties: false
     ACL:
       type: object
       properties:
-        ATTRIBUTES:
+        attributes:
           type: array
           items:
-            $ref: "#/components/schemas/attributeItem"
-        USEATTRIBUTES:
+            $ref: "#/components/schemas/AttributeItem"
+        useAttributes:
           type: string
-        RIGHTS:
+        rights:
           type: array
           items:
-            $ref: "#/components/schemas/rightsEnum"
-        ACCESS:
+            $ref: "#/components/schemas/RightsEnum"
+        access:
           type: string
           enum:
-            - ALLOW
-            - DISABLED
+            - Allow
+            - Disabled
       required:
-        - RIGHTS
-        - ACCESS
+        - rights
+        - access
       oneOf:
         - required:
-            - ATTRIBUTES
+            - attributes
         - required:
-            - USEATTRIBUTES
+            - useAttributes
       additionalProperties: false
     AccessPermissionRule:
       type: object
       properties:
-        ACL:
+        acl:
           $ref: "#/components/schemas/ACL"
-        USEACL:
+        useAcl:
           type: string
-        OBJECTS:
+        objects:
           type: array
           items:
-            $ref: "#/components/schemas/objectItem"
+            $ref: "#/components/schemas/ObjectItem"
           additionalProperties: false
-        USEOBJECTS:
+        useObjects:
           type: array
           items:
             type: string
-        FORMULA:
-          $ref: "#/components/schemas/logicalExpression"
+        formula:
+          $ref: "#/components/schemas/LogicalExpression"
           additionalProperties: false
-        USEFORMULA:
+        useFormula:
           type: string
-        FRAGMENT:
+        fragment:
           type: string
-        FILTER:
-          $ref: "#/components/schemas/logicalExpression"
+        filter:
+          $ref: "#/components/schemas/LogicalExpression"
           additionalProperties: false
-        USEFILTER:
+        useFilter:
           type: string
       # after consulting with ChatGPT and Copilot
       allOf:
       - oneOf:
           - required: 
-            - ACL
+            - acl
           - required: 
-            - USEACL
+            - useAcl
       - oneOf:
           - required: 
-            - OBJECTS
+            - formula
           - required: 
-            - USEOBJECTS
+            - useFormula
       - oneOf:
           - required: 
-            - FORMULA
+            - objects
           - required: 
-            - USEFORMULA
+            - useObjects
 
       additionalProperties: false
 

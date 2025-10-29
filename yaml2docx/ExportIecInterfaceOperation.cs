@@ -939,6 +939,10 @@ namespace Yaml2Docx
 
                 // prepare cell data, first
                 var name = op.Name;
+
+                if (name == "$eq")
+                    ;
+
                 var type = op.Property?.Type;
                 if (type == null && op.Property?.Ref != null)
                     type = YamlOpenApi.StripSchemaHead(op.Property.Ref.Replace("#/components/schemas/", ""));
@@ -952,6 +956,13 @@ namespace Yaml2Docx
                     card = "1";
                 }
                 var from = YamlOpenApi.StripSchemaHead(op.Origin);
+
+                // handle "normal" enum
+                var enumValues = new List<string?>();
+                if (op.Property?.Enum != null)
+                    enumValues.AddRange(op.Property.Enum);
+
+                // handle array case
                 if (op.Property?.Type == "array" && op.Property.Items?.Ref != null)
                 {
                     type = YamlOpenApi.StripSchemaHead(op.Property.Items.Ref);
@@ -962,6 +973,18 @@ namespace Yaml2Docx
                     if (op.Property.MaxItems != null)
                         max = op.Property.MaxItems.ToString() ?? "0";
                     card = $"{min}..{max}";
+
+                    // ok, look up the enums in the item schema
+                    var itemSchema = doc.FindComponent<YamlOpenApi.OpenApiSchema>(op.Property.Items.Ref);
+
+                    if (itemSchema?.Enum != null && itemSchema.Enum.Count > 0)
+                    {
+                        if (itemSchema.Type != null)
+                            type = itemSchema.Type;
+                        enumValues = new(itemSchema.Enum);
+                        hasEnum = true;
+                        needOf2ndRow = true;
+                    }
                 }
 
                 // expand type??
@@ -1021,11 +1044,11 @@ namespace Yaml2Docx
                     // basically evaluate, what is in the 2nd row
                     var secondText = "";
                     
-                    if (hasEnum && op.Property?.Enum != null)
+                    if (hasEnum && enumValues.Count > 0)
                     {
                         var types = new List<string>();
                         types.Add("Enumeration values: ");
-                        foreach (var etxt in op.Property.Enum)
+                        foreach (var etxt in enumValues)
                             if (etxt != null)
                                 types.Add($"\u2014 {etxt}");
                         secondText = string.Join("\n", types);
@@ -1101,7 +1124,7 @@ namespace Yaml2Docx
             {
                 TableRow tr = new TableRow();
                 tr.Append(CreateMergedCell(
-                    "Key to the table:\nExcl. grp.:\tMutually exclusive group.\nReq.:\tRequired.\nCard. if present:\tMinimum and maximum cardinality of the JSON value, if value is present.", 
+                    "Key to the table:\nExcl. grp.:\tMutually exclusive group. Exactly one member of the group needs to be present.\nReq.:\tRequired.\nCard. if present:\tMinimum and maximum cardinality of the JSON value, if value is present.", 
                     true, cw[0], tabStopPos: new[] { 3.5 } ));
                 tr.Append(CreateMergedCell("", false, cw[1]));
                 tr.Append(CreateMergedCell("", false, cw[2]));

@@ -633,20 +633,30 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportSchema
       skipIfVisited: true
-      suppressSchemas: *suppressSchemaList
+      suppressSchemas:
+      - RightsEnum
+      - StringValue
+      - EmbeddedDataSpecification
       includeSchemas: 
       - GetAssetAdministrationShellsResult
       - PagedResult
       - QueryExpression
-      - logicalExpression
-      - matchExpression
-      - stringValue
-      - attributeItem
       - Value
       - AccessPermissionRule
+      - StringValue
+      - MatchExpression
+      - LogicalExpression
+      - AttributeItem
+      - ObjectItem
+      - ACL
+      - AccessPermissionRule
       schemaNotFollow:
-      - logicalExpression
-      - matchExpression
-      - stringValue
+      - LogicalExpression
+      - MatchExpression
+      - StringValue
       - Value
-      - attributeItem
+      - AttributeItem
+      - ObjectItem
+      suppressMembers:
+      - embeddedDataSpecifications
+      - modelType
