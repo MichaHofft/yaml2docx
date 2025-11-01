@@ -978,11 +978,29 @@ namespace Yaml2Docx
 
 
             // Build Drawing element for the image (same structure as ExportEmbeddedBitmap)
+            long strokeEmu = 12700/2;             // 1/2 pt in EMU
+            long halfStroke = strokeEmu / 2;
+            long innerCx = Math.Max(1, cx - strokeEmu);
+            long innerCy = Math.Max(1, cy - strokeEmu);
+
+            var outline = new A.Outline() { Width = new DocumentFormat.OpenXml.Int32Value((int) strokeEmu) };
+            outline.AppendChild(new A.SolidFill(new A.RgbColorModelHex() { Val = "000000" }));
+
             var element =
                 new Drawing(
                     new DW.Inline(
+                        // keep outer extent equal to desired display size
                         new DW.Extent() { Cx = cx, Cy = cy },
-                        new DW.EffectExtent() { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L },
+
+                        // provide some effect extent so Word won't clip any visual effects (use half stroke)
+                        new DW.EffectExtent()
+                        {
+                            LeftEdge = halfStroke,
+                            TopEdge = halfStroke,
+                            RightEdge = halfStroke,
+                            BottomEdge = halfStroke
+                        },
+
                         new DW.DocProperties() { Id = (UInt32Value)(uint)(_tableRefIdCount++), Name = "Picture" },
                         new DW.NonVisualGraphicFrameDrawingProperties(
                             new A.GraphicFrameLocks() { NoChangeAspect = true }),
@@ -997,25 +1015,30 @@ namespace Yaml2Docx
                                         new A.Blip() { Embed = rId },
                                         new A.Stretch(new A.FillRectangle())
                                     ),
+                                    // inset the actual image content by half the stroke so the outline (centered on edge)
+                                    // is drawn fully inside the outer extent and is not clipped.
                                     new PIC.ShapeProperties(
+                                        // offset the inner content to leave room for the outline
                                         new A.Transform2D(
-                                            new A.Offset() { X = 0L, Y = 0L },
-                                            new A.Extents() { Cx = cx, Cy = cy }
+                                            new A.Offset() { X = halfStroke, Y = halfStroke },
+                                            new A.Extents() { Cx = innerCx, Cy = innerCy }
                                         ),
-                                        new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle }
-                                    )
+                                        new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle },
+                                        outline)
                                 )
                             )
                             { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" }
                         )
                     )
                     {
+                        // keep distances from text as before
                         DistanceFromTop = (UInt32Value)0U,
                         DistanceFromBottom = (UInt32Value)0U,
                         DistanceFromLeft = (UInt32Value)0U,
                         DistanceFromRight = (UInt32Value)0U
                     }
                 );
+
 
             // Append to document
             var run = new Run(element);
