@@ -844,7 +844,8 @@ namespace Yaml2Docx
             string pngFilePath,
             double? targetWidthCm = null,
             double? targetHeightCm = null,
-            double? maxHeightCm = null)
+            double? maxHeightCm = null,
+            double? cropBottomCm = null)
         {
             // access
             Body? body = mainPart.Document.Body;
@@ -884,6 +885,43 @@ namespace Yaml2Docx
                 pxHeight = img.Height;
                 horDpi = img.HorizontalResolution > 0 ? img.HorizontalResolution : horDpi;
                 verDpi = img.VerticalResolution > 0 ? img.VerticalResolution : verDpi;
+
+                // based on this, compute assumed pixCmW/H
+                var pixCmW = pxWidth / (horDpi / 2.54);
+                var pixCmH = pxHeight / (verDpi / 2.54);
+
+                // now, only if target width and max height are given, try to do a crop
+                if (targetWidthCm.HasValue && maxHeightCm.HasValue)
+                {
+                    var assumeShrinkY = pixCmW / targetWidthCm.Value;
+                    if (pixCmH / assumeShrinkY > maxHeightCm.Value)
+                        assumeShrinkY *= (pixCmH / assumeShrinkY) / maxHeightCm.Value;
+
+                    // Wenn cropBottomCm angegeben, schneiden wir die gewünschte Anzahl cm vom unteren Rand ab
+                    if (assumeShrinkY > 0.001 && cropBottomCm.HasValue && cropBottomCm.Value > 0.0)
+                    {
+                        // Pixel, die entfernt werden sollen (verDpi = vertikale DPI)
+                        int pixelsToRemove = (int)Math.Round(cropBottomCm.Value * assumeShrinkY * verDpi / 2.54); // 1 inch = 2.54 cm
+                        int newHeightPx = Math.Max(1, pxHeight - pixelsToRemove);
+
+                        if (newHeightPx < pxHeight)
+                        {
+                            using (var bmp = new Bitmap(pxWidth, newHeightPx))
+                            using (var g = Graphics.FromImage(bmp))
+                            {
+                                g.DrawImage(img, new Rectangle(0, 0, pxWidth, newHeightPx), new Rectangle(0, 0, pxWidth, newHeightPx), GraphicsUnit.Pixel);
+                                using (var outMs = new MemoryStream())
+                                {
+                                    bmp.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
+                                    imgBytes = outMs.ToArray();
+                                }
+                            }
+
+                            // aktualisiere die Maße für spätere Berechnungen
+                            pxHeight = newHeightPx;
+                        }
+                    }
+                }
             }
 
             // Add image part
@@ -894,23 +932,21 @@ namespace Yaml2Docx
             }
             string rId = mainPart.GetIdOfPart(imagePart);
 
-            // Compute extents (EMU). 1 cm = 360000 EMU. Fallback using image DPI.
-            const double EMU_PER_CM = 360000.0;
-            const double EMU_PER_INCH = 914400.0;
+            // define image width and height in cm
+            double cmx = 0.0, cmy = 0.0;
 
-            long cx = 0; long cy = 0;
             if (targetWidthCm.HasValue || targetHeightCm.HasValue)
             {
                 double aspect = (double)pxWidth / Math.Max(1, pxHeight);
                 if (targetWidthCm.HasValue && targetHeightCm.HasValue)
                 {
-                    cx = (long)(targetWidthCm.Value * EMU_PER_CM);
-                    cy = (long)(targetHeightCm.Value * EMU_PER_CM);
+                    cmx = targetWidthCm.Value;
+                    cmy = targetHeightCm.Value;
                 }
                 else if (targetWidthCm.HasValue)
                 {
-                    var cmx = targetWidthCm.Value;
-                    var cmy = cmx / aspect;
+                    cmx = targetWidthCm.Value;
+                    cmy = cmx / aspect;
 
                     if (maxHeightCm.HasValue && cmy > maxHeightCm.Value)
                     {
@@ -918,21 +954,28 @@ namespace Yaml2Docx
                         cmy /= (cmy / maxHeightCm.Value);
                     }
 
-                    cx = (long)(cmx * EMU_PER_CM);
-                    cy = (long)(cmy * EMU_PER_CM);
                 }
                 else if (targetHeightCm.HasValue)
                 // only height given
                 {
-                    cy = (long)(targetHeightCm.Value * EMU_PER_CM);
-                    cx = (long)(cy * aspect);
-                }
+                    cmy = targetHeightCm.Value;
+                    cmx = cmy * aspect;
+                }                           
             }
             else
             {
-                cx = (long)(pxWidth * EMU_PER_INCH / horDpi);
-                cy = (long)(pxHeight * EMU_PER_INCH / verDpi);
+                cmx = pxWidth / horDpi;
+                cmy = pxHeight / verDpi;
             }
+
+            // Compute extents (EMU). 1 cm = 360000 EMU. Fallback using image DPI.
+            const double EMU_PER_CM = 360000.0;
+            const double EMU_PER_INCH = 914400.0;
+
+            long cx = 0; long cy = 0;
+            cx = (long)(cmx * EMU_PER_CM);
+            cy = (long)(cmy * EMU_PER_CM);
+
 
             // Build Drawing element for the image (same structure as ExportEmbeddedBitmap)
             var element =

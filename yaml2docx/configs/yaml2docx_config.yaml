@@ -59,12 +59,14 @@ createWordFiles:
       heading: "Root of the grammar for AAS queries and AAS access rules"
       body: "Table %table-ref% shows the rule, which form the root of the the grammar for AAS queries and AAS access rules."
       targetWidthCm: 8
+      cropBottomCm: 1.5
       parts:
       - grammar
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Logical expressions"
       body: "Table %table-ref% shows the rules, which form logical expressions. These may rely on comparisions, boolean constants and white space (see below)."
+      cropBottomCm: 1
       parts:
       - query
       - selectStatement
@@ -78,6 +80,7 @@ createWordFiles:
       heading: "Match expressions and comparisons"
       body: "Table %table-ref% shows the rules, which form matches and comparisons between operands of different data types. These operands may be the results of further expressions and literal values (see below)."
       fontSize: 6
+      cropBottomCm: 1
       parts:
       - matchExpression
       - singleComparison
@@ -92,6 +95,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Operands"
       body: "Table %table-ref% shows operands of different data types. Operands might also be expressed as results of value casting operations."
+      cropBottomCm: 1.5
       parts:
       - operand
       - stringOperand
@@ -105,6 +109,7 @@ createWordFiles:
       heading: "Casting operations"
       body: "Table %table-ref% shows casting operations for different data types."
       targetWidthCm: 12
+      cropBottomCm: 1.1
       parts:
       - castToString
       - castToNumerical
@@ -116,6 +121,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Numerical and boolean literals, whitespace"
       body: "Table %table-ref% shows several rules for the definition of numerical and boolean literals, as well as the universal handling of whitespace for all rules."
+      cropBottomCm: 1.3
       parts:
       - ws
       - digit
@@ -128,6 +134,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "String literals"
       body: "Table %table-ref% shows several rules for the definition of string literals."
+      cropBottomCm: 1.5
       parts:
       - UpperAtoZ
       - LowerAtoZ
@@ -138,6 +145,7 @@ createWordFiles:
       heading: "Date and time literals"
       body: "Table %table-ref% shows several rules for the definition of date and time literals."
       fontSize: 5.5
+      cropBottomCm: 1.1
       parts:
       - DateTimeLiteral
       - TimeLiteral
@@ -156,6 +164,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of AAS elements and attributes"
       body: "Table %table-ref% shows several rules allowing building expressions of fields of AAS specific elements and specific attributes."
+      cropBottomCm: 1
       parts:
       - FieldIdentifier
       - FieldIdentifierString
@@ -172,6 +181,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of references to AAS elements and attributes"
       body: "Table %table-ref% shows several rules allowing building expressions of fields of references of AAS elements, named descriptors for AAS and Submodels."
+      cropBottomCm: 1
       parts:
       - FieldIdentifierAasDescriptor
       - FieldIdentifierSmDescriptor

@@ -134,6 +134,7 @@ namespace Yaml2Docx
 
             public double? FontSize = null;
             public double? TargetWidthCm = null;
+            public double? CropBottomCm = null;
         }
 
         public class ReadOpenApiFile

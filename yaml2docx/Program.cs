@@ -463,7 +463,8 @@ namespace Yaml2Docx
                                             mainPart, act,
                                             pngFilePath: bitmapFn,
                                             targetWidthCm: act.TargetWidthCm ?? config.GrammarCodeTargetWidthCm,
-                                            maxHeightCm: config.GrammarCodeMaxHeightCm);
+                                            maxHeightCm: config.GrammarCodeMaxHeightCm,
+                                            cropBottomCm: act.CropBottomCm);
                                     }
                                 }
                             }
