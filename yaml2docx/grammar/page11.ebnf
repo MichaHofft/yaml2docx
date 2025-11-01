@@ -1,0 +1,3 @@
+idShortPath = ( idShort, [ "[", { digit }, "]" ], { ".", idShortPath } ) ;
+idShort = ( LowerAtoZ | UpperAtoZ ), { LowerAtoZ | UpperAtoZ | digit | "_" } ;
+ws = { " " | "\t" | "\r" | "\n" } ;

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -709,6 +710,100 @@ namespace Yaml2Docx
 
                     // separator and caption text
                     new Run(new Text($" – Overview on interface operations")
+                    {
+                        Space = SpaceProcessingModeValues.Preserve
+                    })
+
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                // Append to the body
+                body.Append(caption);
+            }
+
+            // now, append the monospaced paragraphs?
+            body.Append(paras);
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
+
+        }
+
+        /// <summary>
+        /// Export a single operation to the Word
+        /// </summary>
+        public void ExportMultiLineText(
+            MainDocumentPart mainPart,
+            YamlConfig.ExportAction action,
+            IEnumerable<string> lines,
+            double? fontSize = null)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            if (action == null || lines == null)
+                return;
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = new List<Substitution>() { substTablRef };
+
+            // Heading
+            if (action.Heading != null)
+                body.AppendChild(CreateParagraph(
+                    $"{action.Heading}",
+                    styleId: $"{_config.GrammarHeadingStyle}"));
+
+            // Intro text
+            if (action.Body != null)
+                body.AppendChild(CreateParagraph(
+                    $"{action.Body}",
+                    styleId: $"{_config.BodyStyle}",
+                    substitutions: substs));
+
+            // paragraphs
+            var paras = CreateMonospacedParagraph(lines.ToList(), styleId: _config.GrammarCodeStyle, 
+                    isBoxed: true, fontSize: fontSize);
+
+            // Before appending the table, add some caption text?
+            if (_config.AddTableCaptions)
+            {
+                // Caption paragraph
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    // literal text "Table "
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }), // normally done by Word
+
+                    // --- Bookmark around the SEQ field only ---
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(
+                        new FieldCode(" SEQ Table \\* ARABIC "),
+                        new RunProperties(new NoProof())),
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")), // placeholder; updated by Word
+                    new Run(
+                        new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    // --- end of bookmark ---
+                    new BookmarkEnd() { Id = "0" },
+
+                    // separator and caption text
+                    new Run(new Text($" – {action.Heading}")
                     {
                         Space = SpaceProcessingModeValues.Preserve
                     })
@@ -1883,7 +1978,8 @@ namespace Yaml2Docx
         public List<Paragraph> CreateMonospacedParagraph(
             List<string> lines,
             string? styleId = null,
-            bool isBoxed = false)
+            bool isBoxed = false,
+            double? fontSize = null)
         {
             // try choose one Paragraph with multiple Runs
             var firstPara = new Paragraph();
@@ -1924,9 +2020,12 @@ namespace Yaml2Docx
                 // Add font + size formatting
                 Run run = new Run();
                 RunProperties runProps = new RunProperties(
-                    new RunFonts { Ascii = "CourierNew", HighAnsi = "CourierNew" },
-                    new FontSize { Val = "16" } // 8 pt
+                    //new RunFonts { Ascii = "CourierNew", HighAnsi = "CourierNew" },
+                    //new FontSize { Val = "16" } // 8 pt
                 );
+
+                if (fontSize.HasValue)
+                    runProps.Append(new FontSize() { Val = (2 * fontSize.Value).ToString(CultureInfo.InvariantCulture) });
 
                 run.Append(runProps);
                 run.Append(new Text(line ?? "") { Space = SpaceProcessingModeValues.Preserve });
@@ -2107,7 +2206,7 @@ namespace Yaml2Docx
                 string name = style.StyleName?.Val?.ToString() ?? "(no name)";
                 string type = style.Type?.ToString() ?? "(no type)";
 
-                Console.WriteLine($"{styleId,-30} | {name,-40} | {type}");
+                Console.WriteLine($"{prefix}{styleId,-30} | {name,-40} | {type}");
             }
         }
 

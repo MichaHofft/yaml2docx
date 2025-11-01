@@ -89,27 +89,41 @@ castToDateTime =
 castToTime =
     "time",  ws, "(",  ws, ( stringOperand | dateTimeOperand ), ws, ")", ws ;
  
+AllAccessDefAttributes = { "DEFATTRIBUTES", ws, StringLiteral, ws, AttributeGroup, ws, } ;
+AllAccessDefAcls = { "DEFACLS",  ws, StringLiteral, ws, ACL, ws } ;
+AllAccessDefObjects = { "DEFOBJECTS",  ws, StringLiteral, ws, ObjectGroup, ws } ;
+AllAccessDefFormulas = { "DEFFORMULAS",  ws, StringLiteral, ws, Condition, ws } ;
+ 
+AllAccessPermissionDefs =
+    AllAccessDefAttributes,
+    AllAccessDefAcls,
+    AllAccessDefObjects,
+    AllAccessDefFormulas ;
+
 AllAccessPermissionRules =
-    { "DEFATTRIBUTES", ws, StringLiteral, ws, AttributeGroup, ws, },
-    { "DEFACLS",  ws, StringLiteral, ws, ACL, ws },
-    { "DEFOBJECTS",  ws, StringLiteral, ws, ObjectGroup, ws },
-    { "DEFFORMULAS",  ws, StringLiteral, ws, Condition, ws },
+    AllAccessPermissionDefs,
     { AccessPermissionRule, ws } ;
+	
+AccessFilter = "FILTER:", ws, FragmentObject, ws, ( Condition | UseFormula );
+
+AccessFormula = "FORMULA:", ws, ( Condition | UseFormula ), ws ;
+ 
+AccessAccessRule = "ACCESSRULE:", ws, ( ACL | UseACL ), ws ;
+ 
+AccessObjects = "OBJECTS:", ws, { SingleObject, ws }, { UseObjectGroup, ws } ;
  
 AccessPermissionRule =
-    "ACCESSRULE:", ws,
-    ( ACL | UseACL ), ws,
-    "OBJECTS:", ws, 
-    { SingleObject, ws },
-    { UseObjectGroup, ws },
-    "FORMULA:", ws,
-    ( Condition | UseFormula ), ws,
-    [ "FILTER:", ws, FragmentObject, ws, ( Condition | UseFormula ), ws ] ;
+    AccessAccessRule,
+    AccessObjects,
+    AccessFormula,
+    [ AccessFilter, ws ] ;
+
+AclAttributes = "ATTRIBUTES:", ws, 
+    { SingleAttribute, ws },
+    { UseAttributeGroup, ws } ;
 
 ACL =
-    "ATTRIBUTES:", ws, 
-    { SingleAttribute, ws },
-    { UseAttributeGroup, ws },
+    AclAttributes,
     "RIGHTS:", ws, Right, ws, { Right, ws },
     "ACCESS:", ws, Access, ws ;
  
@@ -186,16 +200,17 @@ fraction = digit, { digit }, ws ;
 
 digit = ( "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ) ;
 digitWs = digit, ws ;
+UpperAtoF = "A" | "B" | "C" | "D" | "E" | "F" ;
+
 UpperAtoZ = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
           | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T"
           | "U" | "V" | "W" | "X" | "Y" | "Z" ;
-UpperAtoF = "A" | "B" | "C" | "D" | "E" | "F" ;
 LowerAtoZ = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j"
           | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t"
           | "u" | "v" | "w" | "x" | "y" | "z" ;
 
-StringChar = UpperAtoZ | LowerAtoZ | digit | "/" | "*" | "[" | "]" | "(" | ")" | " " | "_" | "@" | "#" | "\\" | "+" | "-" | "." | "," | ":" | "$" | "^" | "*" ;
-
+StringChar = UpperAtoZ | LowerAtoZ | digit | '/' | '*' | '[' | ']' | '(' | ')' | ' ' | '@' | '#' | '\\' | '+' | '-' | '.' | ',' | ':' | '$' | '^' | '_' ;
+	
 StringLiteral = '"', StringChar, { StringChar }, '"' ;
 
 ClaimLiteral = StringLiteral ;
@@ -225,19 +240,3 @@ SpecificAssetIdsClause =  ( "specificAssetIds", ( "[", { digit }, "]" ), ( ".nam
 idShortPath = ( idShort, [ "[", { digit }, "]" ], { ".", idShortPath } ) ;
 idShort = ( LowerAtoZ | UpperAtoZ ), { LowerAtoZ | UpperAtoZ | digit | "_" } ;
 ws = { " " | "\t" | "\r" | "\n" } ;
-
-(*
- 
- 
- 
-
- 
- 
-
- 
- 
- 
- 
- 
-
-*)

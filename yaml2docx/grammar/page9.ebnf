@@ -1,0 +1,8 @@
+HexLiteral = "16#", ( digit | UpperAtoF ), { digit | UpperAtoF } ;
+BoolLiteral = "true" | "false" ;
+FieldIdentifier = FieldIdentifierString ;
+FieldIdentifierString = FieldIdentifierAAS | FieldIdentifierSM | FieldIdentifierSME | FieldIdentifierCD | FieldIdentifierAasDescriptor | FieldIdentifierSmDescriptor ;
+FieldIdentifierAAS = "$aas#", ( "idShort" | "id" | "assetInformation.assetKind" | "assetInformation.assetType" | "assetInformation.globalAssetId" | ( "assetInformation.", SpecificAssetIdsClause ) | ( "submodels.", ReferenceClause ) ) ;
+FieldIdentifierSM = "$sm#", ( SemanticIdClause | "idShort" | "id" ) ;
+FieldIdentifierSME = "$sme", { ".", idShortPath }, "#", ( SemanticIdClause | "idShort" | "value" | "valueType" | "language" ) ;
+FieldIdentifierCD = "$cd#", ( "idShort" | "id" ), ws ;

@@ -1,0 +1,13 @@
+StringChar = UpperAtoZ | LowerAtoZ | digit | '/' | '*' | '[' | ']' | '(' | ')' | ' ' | '@' | '#' | '\\' | '+' | '-' | '.' | ',' | ':' | '$' | '^' | '_' ;
+	
+StringLiteral = '"', StringChar, { StringChar }, '"' ;
+
+ClaimLiteral = StringLiteral ;
+ReferenceLiteral = StringLiteral ;
+RouteLiteral = StringLiteral ;
+IdentifiableLiteral = StringLiteral ;
+ReferableLiteral = StringLiteral ;
+FragmentLiteral = StringLiteral ;
+DescriptorLiteral = StringLiteral ;
+
+NumericalLiteral = [ "+" | "-" ], digit, { digit }, [ ( ".", { digit } ) | ( ".", digit, { digit } ) ], [ ( "e" | "E" ), [ "+" | "-" ], digit, { digit } ] ;

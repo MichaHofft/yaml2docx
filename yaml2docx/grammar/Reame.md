@@ -42,3 +42,9 @@ replace: ,\s+\)
 with:  \),
 
 ```
+
+# Convert SVG to PNG
+
+Only this seems to work
+
+https://svgtopng.com/

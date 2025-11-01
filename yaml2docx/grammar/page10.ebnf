@@ -1,0 +1,7 @@
+FieldIdentifierAasDescriptor = "$aasdesc#", ( "idShort" | "id" | "assetKind" | "assetType" | "globalAssetId" | SpecificAssetIdsClause | ( "endpoints", ( "[", { digit }, "]" ), ".", EndpointClause ) | ( "submodelDescriptors", ( "[", { digit }, "]" ), ".", SmDescriptorClause )) ;
+FieldIdentifierSmDescriptor = "$smdesc#", SmDescriptorClause ;
+SmDescriptorClause = ( SemanticIdClause | "idShort" | "id" | ( "endpoints", ( "[", { digit }, "]" ), ".", EndpointClause ) ) ;
+EndpointClause = "interface" | "protocolinformation.href"  ;
+ReferenceClause = ( "type" | ( "keys", ( "[", { digit }, "]" ) ), ( ".type" | ".value" ) ) ;
+SemanticIdClause = ( "semanticId" | ( "semanticId.", ReferenceClause ) ) ;
+SpecificAssetIdsClause =  ( "specificAssetIds", ( "[", { digit }, "]" ), ( ".name" | ".value" | ".externalSubjectId" | ( ".externalSubjectId.",  ReferenceClause ) ) ) ;

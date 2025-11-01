@@ -103,7 +103,8 @@ namespace Yaml2Docx
         public class ExportAction
         {
             /// <summary>
-            /// ExportPara, ExportOverview, ExportTables, ExportYaml, ExportSchemas, ExportPatterns
+            /// ExportPara, ExportOverview, ExportTables, ExportYaml, ExportSchemas, ExportPatterns,
+            /// ExportRailRoad, ExportGrammar
             /// </summary>
             public string Action = "";
 
@@ -120,6 +121,18 @@ namespace Yaml2Docx
             public List<string> IncludeSchemas = new();
             public List<string> SuppressSchemas = new();
             public List<string> SuppressMembers = new();
+
+            public List<string> Parts = new();
+
+            /// <summary>
+            /// Console Svg Utf8
+            /// </summary>
+            public string OutputFormat = "";
+
+            public string? Heading;
+            public string? Body;
+
+            public double? FontSize = null;
         }
 
         public class ReadOpenApiFile
@@ -133,6 +146,24 @@ namespace Yaml2Docx
             public Dictionary<string, OperationConfig> UseOperations = new();
         }
 
+        public class ReadRailRoadFile
+        {
+            public string Fn = "TBD.txt";
+
+            public bool ListNames = false;
+
+            public List<ExportAction> Actions = new();
+        }
+
+        public class ReadGrammarFile
+        {
+            public string Fn = "TBD.txt";
+
+            public bool ListNames = false;
+
+            public List<ExportAction> Actions = new();
+        }
+
         public class CreateWordFile
         {
             public string Fn = "TBD.docx";
@@ -141,6 +172,8 @@ namespace Yaml2Docx
             public bool ListStyles = false;
 
             public List<ReadOpenApiFile> ReadOpenApiFiles = new();
+            public List<ReadRailRoadFile> ReadRailRoadFiles = new();
+            public List<ReadGrammarFile> ReadGrammarFiles = new();
         }
 
         public class ExportConfig
@@ -162,6 +195,19 @@ namespace Yaml2Docx
             public string TableCaptionStyle = "Normal";
             public string YamlHeadingStyle = "Normal";
             public string YamlCodeStyle = "Normal";
+            public string GrammarHeadingStyle = "Normal";
+            public string GrammarCodeStyle = "Normal";
+
+            public double? GrammarCodeFontSize = null;
+
+            public string DockerBuildTextCmd = "docker";
+            public string DockerBuildTextArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e rrutf8";
+
+            public string DockerBuildSvgCmd = "docker";
+            public string DockerBuildSvgArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e svg";
+
+            public string DockerSvg2PdfCmd = "docker";
+            public string DockerSvg2PdfArgs = "run --rm -v \"${PWD}:/data\" -w /data homi/librsvg --background-color=white --width=4000px -f png -o %out-fn% %in-fn%";
 
             public uint TableCellBorderWidth = 8;
             public uint YamlMonoBorderWidth = 8;

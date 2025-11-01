@@ -1,0 +1,32 @@
+AllAccessDefAttributes = { "DEFATTRIBUTES", ws, StringLiteral, ws, AttributeGroup, ws, } ;
+AllAccessDefAcls = { "DEFACLS",  ws, StringLiteral, ws, ACL, ws } ;
+AllAccessDefObjects = { "DEFOBJECTS",  ws, StringLiteral, ws, ObjectGroup, ws } ;
+AllAccessDefFormulas = { "DEFFORMULAS",  ws, StringLiteral, ws, Condition, ws } ;
+ 
+AllAccessPermissionDefs =
+    AllAccessDefAttributes,
+    AllAccessDefAcls,
+    AllAccessDefObjects,
+    AllAccessDefFormulas ;
+
+AllAccessPermissionRules =
+    AllAccessPermissionDefs,
+    { AccessPermissionRule, ws } ;
+	
+AccessFilter = "FILTER:", ws, FragmentObject, ws, ( Condition | UseFormula );
+
+AccessFormula = "FORMULA:", ws, ( Condition | UseFormula ), ws ;
+ 
+AccessAccessRule = "ACCESSRULE:", ws, ( ACL | UseACL ), ws ;
+ 
+AccessObjects = "OBJECTS:", ws, { SingleObject, ws }, { UseObjectGroup, ws } ;
+ 
+AccessPermissionRule =
+    AccessAccessRule,
+    AccessObjects,
+    AccessFormula,
+    [ AccessFilter, ws ] ;
+
+AclAttributes = "ATTRIBUTES:", ws, 
+    { SingleAttribute, ws },
+    { UseAttributeGroup, ws } ;

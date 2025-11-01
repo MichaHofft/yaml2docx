@@ -7,6 +7,9 @@ noteStyle: NOTE
 tableCaptionStyle: TABLE-title
 yamlHeadingStyle: berschrift3
 yamlCodeStyle: YamlMono
+grammarHeadingStyle: berschrift3
+grammarCodeStyle: SourceCode
+grammarCodeFontSize: 7
 tableCellBorderWidth: 4
 yamlMonoBorderWidth: 4
 numberEmptyLines: 1
@@ -45,6 +48,135 @@ createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
   listStyles: true
+  readGrammarFiles:
+  - fn: .\grammar\aas-grammar-iec-63278-5.ebnf
+    listNames: true
+    actions:
+    - action: ExportGrammar
+      outputFormat: &anchorOutputFormat "console utf8"
+      heading: "Root of the grammar for AAS queries and AAS access rules"
+      body: "Table %table-ref% shows the rule, which form the root of the the grammar for AAS queries and AAS access rules."
+      parts:
+      - grammar
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Logical expressions"
+      body: "Table %table-ref% shows the rules, which form logical expressions. These may rely on comparisions, boolean constants and white space (see below)."
+      parts:
+      - query
+      - selectStatement
+      - logicalExpression
+      - logicalNestedExpression
+      - logicalOrExpression
+      - logicalAndExpression
+      - logicalNotExpression
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Match expressions and comparisons"
+      body: "Table %table-ref% shows the rules, which form matches and comparisons between operands of different data types. These operands may be the results of further expressions and literal values (see below)."
+      fontSize: 6
+      parts:
+      - matchExpression
+      - singleComparison
+      - allComparisons
+      - stringComparison
+      - numericalComparison
+      - hexComparison
+      - boolComparison
+      - dateTimeComparison
+      - timeComparison
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Operands"
+      body: "Table %table-ref% shows operands of different data types. Operands might also be expressed as results of value casting operations."
+      parts:
+      - operand
+      - stringOperand
+      - numericalOperand
+      - hexOperand
+      - boolOperand
+      - dateTimeOperand
+      - timeOperand
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Casting operations"
+      body: "Table %table-ref% shows casting operations for different data types."
+      parts:
+      - castToString
+      - castToNumerical
+      - castToHex
+      - castToBool
+      - castToDateTime
+      - castToTime
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Numerical and boolean literals, whitespace"
+      body: "Table %table-ref% shows several rules for the definition of numerical and boolean literals, as well as the universal handling of whitespace for all rules."
+      parts:
+      - ws
+      - digit
+      - digitWs
+      - UpperAtoF
+      - NumericalLiteral
+      - HexLiteral
+      - BoolLiteral
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "String literals"
+      body: "Table %table-ref% shows several rules for the definition of string literals."
+      parts:
+      - UpperAtoZ
+      - LowerAtoZ
+      - StringChar
+      - StringLiteral
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Date and time literals"
+      body: "Table %table-ref% shows several rules for the definition of date and time literals."
+      fontSize: 5.5
+      parts:
+      - DateTimeLiteral
+      - TimeLiteral
+      - datetime
+      - date
+      - year
+      - month
+      - day
+      - time
+      - timezone
+      - hour
+      - minute
+      - second
+      - fraction
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Identifiers of fields of AAS elements and attributes"
+      body: "Table %table-ref% shows several rules allowing building expressions of fields of AAS specific elements and specific attributes."
+      parts:
+      - FieldIdentifier
+      - FieldIdentifierString
+      - FieldIdentifierAAS
+      - FieldIdentifierSM
+      - FieldIdentifierSME
+      - FieldIdentifierCD
+      - ReferenceClause
+      - SemanticIdClause
+      - SpecificAssetIdsClause
+      - idShortPath
+      - idShort
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Identifiers of fields of references to AAS elements and attributes"
+      body: "Table %table-ref% shows several rules allowing building expressions of fields of references of AAS elements, named descriptors for AAS and Submodels."
+      parts:
+      - FieldIdentifierAasDescriptor
+      - FieldIdentifierSmDescriptor
+      - SmDescriptorClause
+      - EndpointClause
+    - action: ExportPara
+      paraText: NOTE   For compatibility with known implementations, so called descriptors for AAS, Submodels and so call ConceptDescriptions are already introduced.
+      paraStyle: NOTE
+
   readOpenApiFiles:
   #
   # First pass: Tables for the individual (technology-neutral) interface operations

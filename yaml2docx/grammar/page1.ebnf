@@ -1,0 +1,24 @@
+grammar = query | AllAccessPermissionRules ;
+ 
+query = [selectStatement], logicalExpression ;
+selectStatement = "$select", ws, "id", ws ;
+
+logicalExpression = logicalNestedExpression | logicalOrExpression | logicalAndExpression | logicalNotExpression | matchExpression | BoolLiteral | castToBool | singleComparison ;
+
+logicalNestedExpression = "(",  ws, logicalExpression, ")", ws ;
+
+logicalOrExpression = "$or", ws, "(", ws, logicalExpression, ws, logicalExpression, { ",", ws, logicalExpression }, ")", ws ;
+
+logicalAndExpression = "$and", ws, "(", ws, logicalExpression, ws, logicalExpression, { ",", ws, logicalExpression }, ")", ws ;
+
+logicalNotExpression = "$not", ws, "(", ws, logicalExpression, ")", ws ;
+
+matchExpression = ( "$match", ws, "(", ws, ( singleComparison | matchExpression), { ",", ws, ( singleComparison | matchExpression) }, ")", ws ) ;
+ 
+singleComparison =  
+    stringComparison | 
+    numericalComparison | 
+    hexComparison | 
+    boolComparison | 
+    dateTimeComparison | 
+    timeComparison ;
