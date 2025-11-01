@@ -5,6 +5,8 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using static Yaml2Docx.YamlConfig;
 
+[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows")]
+
 namespace Yaml2Docx
 {
     public class Program
@@ -415,10 +417,54 @@ namespace Yaml2Docx
                                 {
                                     Console.WriteLine($"  Starting Docker {config.DockerBuildSvgCmd} {config.DockerBuildSvgArgs} ..");
 
+                                    var outputSvg = new List<string>();
+
                                     ProcessLauncher.StartProcess(
                                         cmd: config.DockerBuildSvgCmd,
                                         args: config.DockerBuildSvgArgs,
-                                        inputLines: assy);
+                                        inputLines: assy,
+                                        outputLines: outputSvg);
+
+                                    if (outputSvg.Count < 1)
+                                    {
+                                        Console.WriteLine($"    ERROR: Could not generate SVG for input {assy.FirstOrDefault()} ..");
+                                    }
+                                    else
+                                    {
+                                        // Need a work dir. Take the one the user lives in
+                                        string workingDir = Environment.CurrentDirectory;
+
+                                        // elsewise something like this:
+                                        // string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                                        // string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+                                        // build an input file for the SVG
+                                        var svgFn = Path.Combine(workingDir, "input.svg");
+                                        Console.WriteLine($"    Writing SVG to {svgFn} ..");
+                                        System.IO.File.WriteAllLines(svgFn, outputSvg);
+
+                                        // build an output file for the PNG
+                                        var bitmapFn = Path.Combine(workingDir, "output.png");
+                                        Console.WriteLine($"    Docker will write bitmap to {bitmapFn} ..");
+
+                                        // start 2nd container
+                                        var reps = new Dictionary<string, string>();
+                                        reps.Add("%wd%", workingDir);
+                                        reps.Add("%in-fn%", System.IO.Path.GetFileName(svgFn));
+                                        reps.Add("%out-fn%", System.IO.Path.GetFileName(bitmapFn));
+
+                                        ProcessLauncher.StartProcess(
+                                            cmd: config.DockerSvg2BitmapCmd,
+                                            args: config.DockerSvgBitmapfArgs, 
+                                            argReplacements: reps,
+                                            lambdaLog: (s) => Console.WriteLine($"    System: {s}"));
+
+                                        wp.ExportEmbeddedPngFile(
+                                            mainPart, act,
+                                            pngFilePath: bitmapFn,
+                                            targetWidthCm: act.TargetWidthCm ?? config.GrammarCodeTargetWidthCm,
+                                            maxHeightCm: config.GrammarCodeMaxHeightCm);
+                                    }
                                 }
                             }
                         }

@@ -15,6 +15,11 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization.ObjectGraphVisitors;
+
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using A = DocumentFormat.OpenXml.Drawing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
+
 using static Yaml2Docx.YamlOpenApi;
 
 namespace Yaml2Docx
@@ -827,6 +832,190 @@ namespace Yaml2Docx
             for (int i = 0; i < _config.NumberEmptyLines; i++)
                 body.AppendChild(CreateParagraph(""));
 
+        }
+
+        /// <summary>
+        /// Export a PNG image from disk into the Word document.
+        /// Accepts an existing .png file path; size can be given in cm or inferred from image DPI.
+        /// </summary>
+        public void ExportEmbeddedPngFile(
+            MainDocumentPart mainPart,
+            YamlConfig.ExportAction action,
+            string pngFilePath,
+            double? targetWidthCm = null,
+            double? targetHeightCm = null,
+            double? maxHeightCm = null)
+        {
+            // access
+            Body? body = mainPart.Document.Body;
+            if (body == null)
+                return;
+
+            if (action == null || string.IsNullOrEmpty(pngFilePath) || !File.Exists(pngFilePath))
+                return;
+
+            // generate a table-reference
+            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substs = new List<Substitution>() { substTablRef };
+
+            // Heading
+            if (action.Heading != null)
+                body.AppendChild(CreateParagraph(
+                    $"{action.Heading}",
+                    styleId: $"{_config.GrammarHeadingStyle}"));
+
+            // Intro text
+            if (action.Body != null)
+                body.AppendChild(CreateParagraph(
+                    $"{action.Body}",
+                    styleId: $"{_config.BodyStyle}",
+                    substitutions: substs));
+
+            // Read png bytes
+            byte[] imgBytes = File.ReadAllBytes(pngFilePath);
+
+            // Use System.Drawing to obtain pixel size and DPI
+            int pxWidth, pxHeight;
+            float horDpi = 96f, verDpi = 96f;
+            using (var ms = new MemoryStream(imgBytes))
+            using (var img = System.Drawing.Image.FromStream(ms, true, true))
+            {
+                pxWidth = img.Width;
+                pxHeight = img.Height;
+                horDpi = img.HorizontalResolution > 0 ? img.HorizontalResolution : horDpi;
+                verDpi = img.VerticalResolution > 0 ? img.VerticalResolution : verDpi;
+            }
+
+            // Add image part
+            var imagePart = mainPart.AddImagePart(ImagePartType.Png);
+            using (var s = new MemoryStream(imgBytes))
+            {
+                imagePart.FeedData(s);
+            }
+            string rId = mainPart.GetIdOfPart(imagePart);
+
+            // Compute extents (EMU). 1 cm = 360000 EMU. Fallback using image DPI.
+            const double EMU_PER_CM = 360000.0;
+            const double EMU_PER_INCH = 914400.0;
+
+            long cx = 0; long cy = 0;
+            if (targetWidthCm.HasValue || targetHeightCm.HasValue)
+            {
+                double aspect = (double)pxWidth / Math.Max(1, pxHeight);
+                if (targetWidthCm.HasValue && targetHeightCm.HasValue)
+                {
+                    cx = (long)(targetWidthCm.Value * EMU_PER_CM);
+                    cy = (long)(targetHeightCm.Value * EMU_PER_CM);
+                }
+                else if (targetWidthCm.HasValue)
+                {
+                    var cmx = targetWidthCm.Value;
+                    var cmy = cmx / aspect;
+
+                    if (maxHeightCm.HasValue && cmy > maxHeightCm.Value)
+                    {
+                        cmx /= (cmy / maxHeightCm.Value);
+                        cmy /= (cmy / maxHeightCm.Value);
+                    }
+
+                    cx = (long)(cmx * EMU_PER_CM);
+                    cy = (long)(cmy * EMU_PER_CM);
+                }
+                else if (targetHeightCm.HasValue)
+                // only height given
+                {
+                    cy = (long)(targetHeightCm.Value * EMU_PER_CM);
+                    cx = (long)(cy * aspect);
+                }
+            }
+            else
+            {
+                cx = (long)(pxWidth * EMU_PER_INCH / horDpi);
+                cy = (long)(pxHeight * EMU_PER_INCH / verDpi);
+            }
+
+            // Build Drawing element for the image (same structure as ExportEmbeddedBitmap)
+            var element =
+                new Drawing(
+                    new DW.Inline(
+                        new DW.Extent() { Cx = cx, Cy = cy },
+                        new DW.EffectExtent() { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L },
+                        new DW.DocProperties() { Id = (UInt32Value)(uint)(_tableRefIdCount++), Name = "Picture" },
+                        new DW.NonVisualGraphicFrameDrawingProperties(
+                            new A.GraphicFrameLocks() { NoChangeAspect = true }),
+                        new A.Graphic(
+                            new A.GraphicData(
+                                new PIC.Picture(
+                                    new PIC.NonVisualPictureProperties(
+                                        new PIC.NonVisualDrawingProperties() { Id = (UInt32Value)0U, Name = Path.GetFileName(pngFilePath) },
+                                        new PIC.NonVisualPictureDrawingProperties()
+                                    ),
+                                    new PIC.BlipFill(
+                                        new A.Blip() { Embed = rId },
+                                        new A.Stretch(new A.FillRectangle())
+                                    ),
+                                    new PIC.ShapeProperties(
+                                        new A.Transform2D(
+                                            new A.Offset() { X = 0L, Y = 0L },
+                                            new A.Extents() { Cx = cx, Cy = cy }
+                                        ),
+                                        new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle }
+                                    )
+                                )
+                            )
+                            { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" }
+                        )
+                    )
+                    {
+                        DistanceFromTop = (UInt32Value)0U,
+                        DistanceFromBottom = (UInt32Value)0U,
+                        DistanceFromLeft = (UInt32Value)0U,
+                        DistanceFromRight = (UInt32Value)0U
+                    }
+                );
+
+            // Append to document
+            var run = new Run(element);
+            Paragraph paragraph = new Paragraph();
+            paragraph.Append(new ParagraphProperties(new Justification() { Val = JustificationValues.Center }));
+
+            paragraph.Append(run);
+            body.Append(paragraph);
+
+            // Caption (optional) — same approach as in other methods
+            if (_config.AddTableCaptions)
+            {
+                Paragraph caption = new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId { Val = _config.TableCaptionStyle }
+                    ),
+
+                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }),
+                    new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
+
+                    new Run(new FieldChar() { FieldCharType = FieldCharValues.Begin }),
+                    new Run(new FieldCode(" SEQ Table \\* ARABIC "), new RunProperties(new NoProof())),
+                    new Run(new FieldChar() { FieldCharType = FieldCharValues.Separate }),
+                    new Run(new Text("1")),
+                    new Run(new FieldChar() { FieldCharType = FieldCharValues.End }),
+
+                    new BookmarkEnd() { Id = "0" },
+
+                    new Run(new Text($" – {action.Heading}") { Space = SpaceProcessingModeValues.Preserve })
+                );
+
+                if (_config.TableCaptionStyle != null)
+                {
+                    caption.ParagraphProperties = new ParagraphProperties();
+                    caption.ParagraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = _config.TableCaptionStyle };
+                }
+
+                body.Append(caption);
+            }
+
+            // empty rows
+            for (int i = 0; i < _config.NumberEmptyLines; i++)
+                body.AppendChild(CreateParagraph(""));
         }
 
         public List<string> PatternStorage = new();

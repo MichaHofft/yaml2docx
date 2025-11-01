@@ -21,8 +21,20 @@ namespace Yaml2Docx
             string workDir = "",
             IEnumerable<string>? inputLines = null,
             List<string>? outputLines = null,
-            string prefix = "")
+            string prefix = "",
+            Dictionary<string, string>? argReplacements = null,
+            Action<string>? lambdaLog = null)
         {
+            // some placeholders
+            if (argReplacements != null)
+                foreach (var ar in argReplacements)
+                {
+                    args = args.Replace(ar.Key, ar.Value);
+                }
+
+            // log
+            lambdaLog?.Invoke($"Starting process: {cmd} {args} ..");
+
             // start process??
             var proc = new Process();
             proc.StartInfo.FileName = cmd;

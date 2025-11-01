@@ -10,6 +10,8 @@ yamlCodeStyle: YamlMono
 grammarHeadingStyle: berschrift3
 grammarCodeStyle: SourceCode
 grammarCodeFontSize: 7
+grammarCodeTargetWidthCm: 16
+grammarCodeMaxHeightCm: 21
 tableCellBorderWidth: 4
 yamlMonoBorderWidth: 4
 numberEmptyLines: 1
@@ -53,9 +55,10 @@ createWordFiles:
     listNames: true
     actions:
     - action: ExportGrammar
-      outputFormat: &anchorOutputFormat "console utf8"
+      outputFormat: &anchorOutputFormat "console svg"
       heading: "Root of the grammar for AAS queries and AAS access rules"
       body: "Table %table-ref% shows the rule, which form the root of the the grammar for AAS queries and AAS access rules."
+      targetWidthCm: 8
       parts:
       - grammar
     - action: ExportGrammar
@@ -101,6 +104,7 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Casting operations"
       body: "Table %table-ref% shows casting operations for different data types."
+      targetWidthCm: 12
       parts:
       - castToString
       - castToNumerical

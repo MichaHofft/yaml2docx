@@ -133,6 +133,7 @@ namespace Yaml2Docx
             public string? Body;
 
             public double? FontSize = null;
+            public double? TargetWidthCm = null;
         }
 
         public class ReadOpenApiFile
@@ -200,14 +201,17 @@ namespace Yaml2Docx
 
             public double? GrammarCodeFontSize = null;
 
+            public double? GrammarCodeTargetWidthCm = 16.0;
+            public double? GrammarCodeMaxHeightCm = 22.0;
+
             public string DockerBuildTextCmd = "docker";
             public string DockerBuildTextArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e rrutf8";
 
             public string DockerBuildSvgCmd = "docker";
             public string DockerBuildSvgArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e svg";
 
-            public string DockerSvg2PdfCmd = "docker";
-            public string DockerSvg2PdfArgs = "run --rm -v \"${PWD}:/data\" -w /data homi/librsvg --background-color=white --width=4000px -f png -o %out-fn% %in-fn%";
+            public string DockerSvg2BitmapCmd = "docker";
+            public string DockerSvgBitmapfArgs = "run --rm -v \"%wd%:/data\" -w /data homi/librsvg --background-color=white --width=4000px -f png -o \"%out-fn%\" \"%in-fn%\"";
 
             public uint TableCellBorderWidth = 8;
             public uint YamlMonoBorderWidth = 8;
