@@ -181,15 +181,86 @@ createWordFiles:
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of references to AAS elements and attributes"
       body: "Table %table-ref% shows several rules allowing building expressions of fields of references of AAS elements, named descriptors for AAS and Submodels."
+      notes:
+      - "For compatibility with known implementations, so called descriptors for AAS, Submodels and so call ConceptDescriptions are already introduced."
       cropBottomCm: 1
       parts:
       - FieldIdentifierAasDescriptor
       - FieldIdentifierSmDescriptor
       - SmDescriptorClause
       - EndpointClause
-    - action: ExportPara
-      paraText: NOTE   For compatibility with known implementations, so called descriptors for AAS, Submodels and so call ConceptDescriptions are already introduced.
-      paraStyle: NOTE
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Formulation of access and permission rules"
+      body: "Table %table-ref% shows several grammar rules allowing building AAS access and permissions rules. On top level, also default for these rules will be expressed. Filters are applied, if required."
+      cropBottomCm: 0.7
+      parts:
+      - AllAccessDefAttributes
+      - AllAccessDefAcls
+      - AllAccessDefObjects
+      - AllAccessDefFormulas
+      - AllAccessPermissionDefs
+      - AllAccessPermissionRules
+      - AccessFilter
+      - AccessFormula
+      - AccessAccessRule
+      - AccessObjects
+      - AccessPermissionRule
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Formulation of access control lists (ACL)"
+      body: "Table %table-ref% shows several rules allowing expressing access control lists (ACL) based on specified attributes (see next section)."
+      cropBottomCm: 1
+      parts:
+      - AclAttributes
+      - ACL
+      - UseACL
+      - Right
+      - Access
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Formulation of ACL attributes"
+      body: "Table %table-ref% shows several rules allowing expressing attributes for access control lists (ACL)."
+      cropBottomCm: 1
+      parts:
+      - SingleAttribute
+      - ClaimAttribute
+      - GlobalAttribute
+      - ReferenceAttribute
+      - AttributeGroup
+      - UseAttributeGroup
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Formulation of object specifications for ACLs and attributes"
+      body: "Table %table-ref% shows several rules allowing expressing object specifications for access control lists (ACL)."
+      cropBottomCm: 1.5
+      parts:
+      - SingleObject
+      - RouteObject
+      - IdentifiableObject
+      - ReferableObject
+      - FragmentObject
+      - DescriptorObject
+      - ObjectGroup
+      - UseObjectGroup
+      - UseFormula
+      - Condition
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Literals for AAS access rules"
+      body: "Table %table-ref% shows the definitions of literals for specifying AAS access rules."
+      notes:
+      - "For this edition of the standard, the literals are all based on StringLiteral."
+      targetWidthCm: 7
+      cropBottomCm: 2.3
+      parts:
+      - ClaimLiteral
+      - ReferenceLiteral
+      - RouteLiteral
+      - IdentifiableLiteral
+      - ReferableLiteral
+      - FragmentLiteral
+      - DescriptorLiteral
 
   readOpenApiFiles:
   #

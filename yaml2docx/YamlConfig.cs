@@ -131,6 +131,7 @@ namespace Yaml2Docx
 
             public string? Heading;
             public string? Body;
+            public List<string>? Notes;
 
             public double? FontSize = null;
             public double? TargetWidthCm = null;

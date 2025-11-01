@@ -872,6 +872,16 @@ namespace Yaml2Docx
                     styleId: $"{_config.BodyStyle}",
                     substitutions: substs));
 
+            // Notes
+            if (action?.Notes != null)
+            {
+                // add notes per default at the end of the table
+                foreach (var note in action.Notes)
+                    body.AppendChild(CreateParagraph(
+                        $"NOTE   {note}",
+                        styleId: $"{_config.NoteStyle}"));
+            }
+
             // Read png bytes
             byte[] imgBytes = File.ReadAllBytes(pngFilePath);
 
@@ -1001,7 +1011,7 @@ namespace Yaml2Docx
                             BottomEdge = halfStroke
                         },
 
-                        new DW.DocProperties() { Id = (UInt32Value)(uint)(_tableRefIdCount++), Name = "Picture" },
+                        new DW.DocProperties() { Id = (UInt32Value)(uint)(_tableRefIdCount++), Name = "Figure" },
                         new DW.NonVisualGraphicFrameDrawingProperties(
                             new A.GraphicFrameLocks() { NoChangeAspect = true }),
                         new A.Graphic(
@@ -1056,18 +1066,18 @@ namespace Yaml2Docx
                         new ParagraphStyleId { Val = _config.TableCaptionStyle }
                     ),
 
-                    new Run(new Text("Table ") { Space = SpaceProcessingModeValues.Preserve }),
+                    new Run(new Text("Figure ") { Space = SpaceProcessingModeValues.Preserve }),
                     new BookmarkStart() { Name = substTablRef.Value, Id = "0" },
 
                     new Run(new FieldChar() { FieldCharType = FieldCharValues.Begin }),
-                    new Run(new FieldCode(" SEQ Table \\* ARABIC "), new RunProperties(new NoProof())),
+                    new Run(new FieldCode(" SEQ Figure \\* ARABIC "), new RunProperties(new NoProof())),
                     new Run(new FieldChar() { FieldCharType = FieldCharValues.Separate }),
                     new Run(new Text("1")),
                     new Run(new FieldChar() { FieldCharType = FieldCharValues.End }),
 
                     new BookmarkEnd() { Id = "0" },
 
-                    new Run(new Text($" – {action.Heading}") { Space = SpaceProcessingModeValues.Preserve })
+                    new Run(new Text($" – {action?.Heading}") { Space = SpaceProcessingModeValues.Preserve })
                 );
 
                 if (_config.TableCaptionStyle != null)
