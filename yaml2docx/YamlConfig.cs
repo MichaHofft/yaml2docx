@@ -140,6 +140,8 @@ namespace Yaml2Docx
 
         public class ReadOpenApiFile
         {
+            public bool Skip = false;
+
             public string Fn = "TBD.yaml";
 
             public bool ListOperations = false;
@@ -151,6 +153,8 @@ namespace Yaml2Docx
 
         public class ReadRailRoadFile
         {
+            public bool Skip = false;
+
             public string Fn = "TBD.txt";
 
             public bool ListNames = false;
@@ -160,6 +164,8 @@ namespace Yaml2Docx
 
         public class ReadGrammarFile
         {
+            public bool Skip = false;
+
             public string Fn = "TBD.txt";
 
             public bool ListNames = false;

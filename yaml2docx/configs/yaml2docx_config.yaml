@@ -52,6 +52,7 @@ createWordFiles:
   listStyles: true
   readGrammarFiles:
   - fn: .\grammar\aas-grammar-iec-63278-5.ebnf
+    skip: &skipReadGrammar true
     listNames: true
     actions:
     - action: ExportGrammar
@@ -68,13 +69,13 @@ createWordFiles:
       body: "Table %table-ref% shows the rules, which form logical expressions. These may rely on comparisions, boolean constants and white space (see below)."
       cropBottomCm: 1
       parts:
-      - query
-      - selectStatement
-      - logicalExpression
-      - logicalNestedExpression
-      - logicalOrExpression
-      - logicalAndExpression
-      - logicalNotExpression
+      - Query
+      - SelectStatement
+      - LogicalExpression
+      - LogicalNestedExpression
+      - LogicalOrExpression
+      - LogicalAndExpression
+      - LogicalNotExpression
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Match expressions and comparisons"
@@ -82,28 +83,28 @@ createWordFiles:
       fontSize: 6
       cropBottomCm: 1
       parts:
-      - matchExpression
-      - singleComparison
-      - allComparisons
-      - stringComparison
-      - numericalComparison
-      - hexComparison
-      - boolComparison
-      - dateTimeComparison
-      - timeComparison
+      - MatchExpression
+      - SingleComparison
+      - AllComparisons
+      - StringComparison
+      - NumericalComparison
+      - HexComparison
+      - BoolComparison
+      - DateTimeComparison
+      - TimeComparison
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Operands"
       body: "Table %table-ref% shows operands of different data types. Operands might also be expressed as results of value casting operations."
       cropBottomCm: 1.5
       parts:
-      - operand
-      - stringOperand
-      - numericalOperand
-      - hexOperand
-      - boolOperand
-      - dateTimeOperand
-      - timeOperand
+      - Operand
+      - StringOperand
+      - NumericalOperand
+      - HexOperand
+      - BoolOperand
+      - DateTimeOperand
+      - TimeOperand
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Casting operations"
@@ -111,21 +112,21 @@ createWordFiles:
       targetWidthCm: 12
       cropBottomCm: 1.1
       parts:
-      - castToString
-      - castToNumerical
-      - castToHex
-      - castToBool
-      - castToDateTime
-      - castToTime
+      - CastToString
+      - CastToNumerical
+      - CastToHex
+      - CastToBool
+      - CastToDateTime
+      - CastToTime
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Numerical and boolean literals, whitespace"
       body: "Table %table-ref% shows several rules for the definition of numerical and boolean literals, as well as the universal handling of whitespace for all rules."
       cropBottomCm: 1.3
       parts:
-      - ws
-      - digit
-      - digitWs
+      - Ws
+      - Digit
+      - DigitWs
       - UpperAtoF
       - NumericalLiteral
       - HexLiteral
@@ -149,17 +150,17 @@ createWordFiles:
       parts:
       - DateTimeLiteral
       - TimeLiteral
-      - datetime
-      - date
-      - year
-      - month
-      - day
-      - time
-      - timezone
-      - hour
-      - minute
-      - second
-      - fraction
+      - Datetime
+      - Date
+      - Year
+      - Month
+      - Day
+      - Time
+      - Timezone
+      - Hour
+      - Minute
+      - Second
+      - Fraction
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of AAS elements and attributes"
@@ -172,11 +173,17 @@ createWordFiles:
       - FieldIdentifierSM
       - FieldIdentifierSME
       - FieldIdentifierCD
+    - action: ExportGrammar
+      outputFormat: *anchorOutputFormat
+      heading: "Serializations of AAS attributes for identifiers of fields"
+      body: "Table %table-ref% shows several rules for specifying serializations of AAS attributes for identifiers of fields."
+      cropBottomCm: 1
+      parts:
       - ReferenceClause
       - SemanticIdClause
       - SpecificAssetIdsClause
-      - idShortPath
-      - idShort
+      - IdShortPath
+      - IdShort
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of references to AAS elements and attributes"
@@ -270,6 +277,7 @@ createWordFiles:
   # AAS interface
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
     listOperations: false
     actions:
     - action: ExportPara
@@ -381,6 +389,7 @@ createWordFiles:
   # Submodel interface
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     - action: ExportPara
@@ -421,6 +430,7 @@ createWordFiles:
         body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the root level of the Submodel.
       # TODO: End file, restart with new text sections
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     - action: ExportPara
@@ -455,6 +465,7 @@ createWordFiles:
         body: The interface operation described in Table %table-ref% allows to remove a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.  
       # TODO: End file, restart with new text sections
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     - action: ExportPara
@@ -498,6 +509,7 @@ createWordFiles:
         body: The interface operation described in Table %table-ref% allows to update the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
       # TODO: End file, restart with new text sections
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     - action: ExportPara
@@ -543,6 +555,7 @@ createWordFiles:
   # AAS interface
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -580,6 +593,7 @@ createWordFiles:
   # SM interface 1
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -601,6 +615,7 @@ createWordFiles:
   # SM interface 2
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -622,6 +637,7 @@ createWordFiles:
   # SM interface 3
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -643,6 +659,7 @@ createWordFiles:
   # SM interface 4
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -664,6 +681,7 @@ createWordFiles:
   # Third pass: Schemas = Data types
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     actions:
     - action: ExportPara
       paraText: Serialization of data types for interface operations
@@ -722,6 +740,7 @@ createWordFiles:
   # (just use one file to pass test)
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
     actions:
     - action: ExportPara
       paraText: Indexed string pattern definitions
@@ -764,6 +783,7 @@ createWordFiles:
   # QUERY files
   #
   - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: true
     actions:
     - action: ExportPara
@@ -801,6 +821,7 @@ createWordFiles:
   # QUERY files
   #
   - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    skip: *skipReadOpenApi
     listOperations: false
     actions:
     # Start of: Extra header for chapter
@@ -841,6 +862,7 @@ createWordFiles:
   # QUERY files
   #
   - fn: .\yamlInput\MIHO-QueryInterfaces-V3.1.1_SSP-999-resolved.yaml
+    skip: *skipReadOpenApi
     actions:
     - action: ExportPara
       paraText: Serialization of additional data types for query interface operations

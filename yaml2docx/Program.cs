@@ -86,10 +86,221 @@ namespace Yaml2Docx
                         ExportIecInterfaceOperation.ListStyleNames(mainPart, prefix: "    ");
                     }
 
-                    // different API files?
-                    wfn.ReadOpenApiFiles = new();
+                    // rail road files .. dead end?
+                    foreach (var rrf in wfn.ReadRailRoadFiles)
+                    {
+                        // Skip?
+                        if (rrf.Skip)
+                            continue;
+
+                        // Open
+                        Console.WriteLine($"  Reading RailRoad file: {rrf.Fn}");
+                        var rrt = new RailRoadText(rrf.Fn);
+                        if (rrt == null)
+                        {
+                            Console.WriteLine($"    ERROR: Could not read RailRoad file: {rrf.Fn}");
+                            continue;
+                        }
+
+                        // List
+                        if (rrf.ListNames)
+                        {
+                            Console.WriteLine($"  List names of parts:");
+                            foreach (var name in rrt.ListNames())
+                                Console.WriteLine($"    {name}");
+                        }
+
+                        // over actions
+                        foreach (var act in rrf.Actions)
+                        {
+                            var actName = act.Action.Trim().ToLower();
+                            if (actName == "exportpara")
+                            {
+                                wp.ExportParagraph(mainPart, act.ParaText, act.ParaStyle);
+                            }
+                            else
+                            if (actName == "exportrailroad")
+                            {
+                                // collect parts
+                                var parts = new List<RailRoadText.RrPart>();
+                                foreach (var pn in act.Parts)
+                                {
+                                    var p = rrt.FindPart(pn);
+                                    if (p != null)
+                                        parts.Add(p);
+                                }
+
+                                // head
+                                Console.WriteLine($"  Railroad:");
+                                Console.WriteLine($"");
+
+                                // assembly
+                                Console.OutputEncoding = Encoding.UTF8;
+                                var assy = RailRoadText.AssembleParts(parts);
+                                if (act.OutputFormat.Trim().ToLower() == "console")
+                                {
+                                    foreach (var ln in assy)
+                                        Console.WriteLine(ln);
+                                }
+                            }
+                        }
+                    }
+
+                    // grammar files
+                    foreach (var rgf in wfn.ReadGrammarFiles)
+                    {
+                        // Skip?
+                        if (rgf.Skip)
+                            continue;
+
+                        // Open
+                        Console.WriteLine($"  Reading grammar file: {rgf.Fn}");
+                        var grammar = new GrammarText(rgf.Fn);
+                        if (grammar == null)
+                        {
+                            Console.WriteLine($"    ERROR: Could not read grammar file: {rgf.Fn}");
+                            continue;
+                        }
+
+                        // List
+                        if (rgf.ListNames)
+                        {
+                            Console.WriteLine($"  List names of parts of grammar:");
+                            foreach (var name in grammar.ListNames())
+                                Console.WriteLine($"    {name}");
+                        }
+
+                        // over actions
+                        foreach (var act in rgf.Actions)
+                        {
+                            var actName = act.Action.Trim().ToLower();
+                            if (actName == "exportpara")
+                            {
+                                wp.ExportParagraph(mainPart, act.ParaText, act.ParaStyle);
+                            }
+                            else
+                            if (actName == "exportgrammar")
+                            {
+                                // collect parts
+                                var parts = new List<GrammarText.GrammarPart>();
+                                foreach (var pn in act.Parts)
+                                {
+                                    var p = grammar.FindPart(pn);
+                                    if (p != null)
+                                        parts.Add(p);
+                                }
+
+                                // head
+                                Console.WriteLine($"  Assembled grammar:");
+                                Console.WriteLine($"");
+
+                                // assembly
+                                Console.OutputEncoding = Encoding.UTF8;
+                                var assy = GrammarText.AssembleParts(parts);
+                                
+                                // just out?
+                                if (act.OutputFormat.Trim().ToLower().Contains("console"))
+                                {
+                                    foreach (var ln in assy)
+                                        Console.WriteLine(ln);
+                                }
+
+                                // convert via Docker to text?
+                                if (act.OutputFormat.Trim().ToLower().Contains("utf8"))
+                                {
+                                    Console.WriteLine($"  Starting Docker {config.DockerBuildTextCmd} {config.DockerBuildTextArgs} ..");
+
+                                    var output = new List<string>();
+
+                                    ProcessLauncher.StartProcess(
+                                        cmd: config.DockerBuildTextCmd,
+                                        args: config.DockerBuildTextArgs,
+                                        inputLines: assy,
+                                        outputLines: output);
+
+                                    if (output.Count < 1)
+                                    {
+                                        Console.WriteLine($"    ERROR: Could not generate text for input {assy.FirstOrDefault()} ..");
+                                    }
+                                    else
+                                    {
+                                        // Distance to top, Distance to bottom is automatically
+                                        output.Insert(0, "");
+
+                                        Console.WriteLine($"    Writing {output.Count()} lines to Word ..");
+
+                                        wp.ExportMultiLineText(
+                                            mainPart, act, output,
+                                            fontSize: act.FontSize ?? config.GrammarCodeFontSize);
+                                    }
+                                }
+
+                                // convert via Docker into an SVG?
+                                if (act.OutputFormat.Trim().ToLower().Contains("svg"))
+                                {
+                                    Console.WriteLine($"  Starting Docker {config.DockerBuildSvgCmd} {config.DockerBuildSvgArgs} ..");
+
+                                    var outputSvg = new List<string>();
+
+                                    ProcessLauncher.StartProcess(
+                                        cmd: config.DockerBuildSvgCmd,
+                                        args: config.DockerBuildSvgArgs,
+                                        inputLines: assy,
+                                        outputLines: outputSvg);
+
+                                    if (outputSvg.Count < 1)
+                                    {
+                                        Console.WriteLine($"    ERROR: Could not generate SVG for input {assy.FirstOrDefault()} ..");
+                                    }
+                                    else
+                                    {
+                                        // Need a work dir. Take the one the user lives in
+                                        string workingDir = Environment.CurrentDirectory;
+
+                                        // elsewise something like this:
+                                        // string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                                        // string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+                                        // build an input file for the SVG
+                                        var svgFn = Path.Combine(workingDir, "input.svg");
+                                        Console.WriteLine($"    Writing SVG to {svgFn} ..");
+                                        System.IO.File.WriteAllLines(svgFn, outputSvg);
+
+                                        // build an output file for the PNG
+                                        var bitmapFn = Path.Combine(workingDir, "output.png");
+                                        Console.WriteLine($"    Docker will write bitmap to {bitmapFn} ..");
+
+                                        // start 2nd container
+                                        var reps = new Dictionary<string, string>();
+                                        reps.Add("%wd%", workingDir);
+                                        reps.Add("%in-fn%", System.IO.Path.GetFileName(svgFn));
+                                        reps.Add("%out-fn%", System.IO.Path.GetFileName(bitmapFn));
+
+                                        ProcessLauncher.StartProcess(
+                                            cmd: config.DockerSvg2BitmapCmd,
+                                            args: config.DockerSvgBitmapfArgs, 
+                                            argReplacements: reps,
+                                            lambdaLog: (s) => Console.WriteLine($"    System: {s}"));
+
+                                        wp.ExportEmbeddedPngFile(
+                                            mainPart, act,
+                                            pngFilePath: bitmapFn,
+                                            targetWidthCm: act.TargetWidthCm ?? config.GrammarCodeTargetWidthCm,
+                                            maxHeightCm: config.GrammarCodeMaxHeightCm,
+                                            cropBottomCm: act.CropBottomCm);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // different OpenAPI files?
                     foreach (var rof in wfn.ReadOpenApiFiles)
                     {
+                        // Skip?
+                        if (rof.Skip)
+                            continue;
+
                         // Open
                         Console.WriteLine($"  Reading OpenAPI file: {rof.Fn}");
                         var doc = YamlOpenApi.Load(rof.Fn);
@@ -267,206 +478,6 @@ namespace Yaml2Docx
                                 // unknown action!
                                 Console.WriteLine($"    ERROR: Unknown action {act.Action}!");
                                 continue;
-                            }
-                        }
-                    }
-
-                    // grammar files
-                    foreach (var rrf in wfn.ReadRailRoadFiles)
-                    {
-                        // Open
-                        Console.WriteLine($"  Reading RailRoad file: {rrf.Fn}");
-                        var rrt = new RailRoadText(rrf.Fn);
-                        if (rrt == null)
-                        {
-                            Console.WriteLine($"    ERROR: Could not read RailRoad file: {rrf.Fn}");
-                            continue;
-                        }
-
-                        // List
-                        if (rrf.ListNames)
-                        {
-                            Console.WriteLine($"  List names of parts:");
-                            foreach (var name in rrt.ListNames())
-                                Console.WriteLine($"    {name}");
-                        }
-
-                        // over actions
-                        foreach (var act in rrf.Actions)
-                        {
-                            var actName = act.Action.Trim().ToLower();
-                            if (actName == "exportpara")
-                            {
-                                wp.ExportParagraph(mainPart, act.ParaText, act.ParaStyle);
-                            }
-                            else
-                            if (actName == "exportrailroad")
-                            {
-                                // collect parts
-                                var parts = new List<RailRoadText.RrPart>();
-                                foreach (var pn in act.Parts)
-                                {
-                                    var p = rrt.FindPart(pn);
-                                    if (p != null)
-                                        parts.Add(p);
-                                }
-
-                                // head
-                                Console.WriteLine($"  Railroad:");
-                                Console.WriteLine($"");
-
-                                // assembly
-                                Console.OutputEncoding = Encoding.UTF8;
-                                var assy = RailRoadText.AssembleParts(parts);
-                                if (act.OutputFormat.Trim().ToLower() == "console")
-                                {
-                                    foreach (var ln in assy)
-                                        Console.WriteLine(ln);
-                                }
-                            }
-                        }
-                    }
-
-                    // grammar files
-                    foreach (var rgf in wfn.ReadGrammarFiles)
-                    {
-                        // Open
-                        Console.WriteLine($"  Reading grammar file: {rgf.Fn}");
-                        var grammar = new GrammarText(rgf.Fn);
-                        if (grammar == null)
-                        {
-                            Console.WriteLine($"    ERROR: Could not read grammar file: {rgf.Fn}");
-                            continue;
-                        }
-
-                        // List
-                        if (rgf.ListNames)
-                        {
-                            Console.WriteLine($"  List names of parts of grammar:");
-                            foreach (var name in grammar.ListNames())
-                                Console.WriteLine($"    {name}");
-                        }
-
-                        // over actions
-                        foreach (var act in rgf.Actions)
-                        {
-                            var actName = act.Action.Trim().ToLower();
-                            if (actName == "exportpara")
-                            {
-                                wp.ExportParagraph(mainPart, act.ParaText, act.ParaStyle);
-                            }
-                            else
-                            if (actName == "exportgrammar")
-                            {
-                                // collect parts
-                                var parts = new List<GrammarText.GrammarPart>();
-                                foreach (var pn in act.Parts)
-                                {
-                                    var p = grammar.FindPart(pn);
-                                    if (p != null)
-                                        parts.Add(p);
-                                }
-
-                                // head
-                                Console.WriteLine($"  Assembled grammar:");
-                                Console.WriteLine($"");
-
-                                // assembly
-                                Console.OutputEncoding = Encoding.UTF8;
-                                var assy = GrammarText.AssembleParts(parts);
-                                
-                                // just out?
-                                if (act.OutputFormat.Trim().ToLower().Contains("console"))
-                                {
-                                    foreach (var ln in assy)
-                                        Console.WriteLine(ln);
-                                }
-
-                                // convert via Docker to text?
-                                if (act.OutputFormat.Trim().ToLower().Contains("utf8"))
-                                {
-                                    Console.WriteLine($"  Starting Docker {config.DockerBuildTextCmd} {config.DockerBuildTextArgs} ..");
-
-                                    var output = new List<string>();
-
-                                    ProcessLauncher.StartProcess(
-                                        cmd: config.DockerBuildTextCmd,
-                                        args: config.DockerBuildTextArgs,
-                                        inputLines: assy,
-                                        outputLines: output);
-
-                                    if (output.Count < 1)
-                                    {
-                                        Console.WriteLine($"    ERROR: Could not generate text for input {assy.FirstOrDefault()} ..");
-                                    }
-                                    else
-                                    {
-                                        // Distance to top, Distance to bottom is automatically
-                                        output.Insert(0, "");
-
-                                        Console.WriteLine($"    Writing {output.Count()} lines to Word ..");
-
-                                        wp.ExportMultiLineText(
-                                            mainPart, act, output,
-                                            fontSize: act.FontSize ?? config.GrammarCodeFontSize);
-                                    }
-                                }
-
-                                // convert via Docker into an SVG?
-                                if (act.OutputFormat.Trim().ToLower().Contains("svg"))
-                                {
-                                    Console.WriteLine($"  Starting Docker {config.DockerBuildSvgCmd} {config.DockerBuildSvgArgs} ..");
-
-                                    var outputSvg = new List<string>();
-
-                                    ProcessLauncher.StartProcess(
-                                        cmd: config.DockerBuildSvgCmd,
-                                        args: config.DockerBuildSvgArgs,
-                                        inputLines: assy,
-                                        outputLines: outputSvg);
-
-                                    if (outputSvg.Count < 1)
-                                    {
-                                        Console.WriteLine($"    ERROR: Could not generate SVG for input {assy.FirstOrDefault()} ..");
-                                    }
-                                    else
-                                    {
-                                        // Need a work dir. Take the one the user lives in
-                                        string workingDir = Environment.CurrentDirectory;
-
-                                        // elsewise something like this:
-                                        // string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                                        // string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-                                        // build an input file for the SVG
-                                        var svgFn = Path.Combine(workingDir, "input.svg");
-                                        Console.WriteLine($"    Writing SVG to {svgFn} ..");
-                                        System.IO.File.WriteAllLines(svgFn, outputSvg);
-
-                                        // build an output file for the PNG
-                                        var bitmapFn = Path.Combine(workingDir, "output.png");
-                                        Console.WriteLine($"    Docker will write bitmap to {bitmapFn} ..");
-
-                                        // start 2nd container
-                                        var reps = new Dictionary<string, string>();
-                                        reps.Add("%wd%", workingDir);
-                                        reps.Add("%in-fn%", System.IO.Path.GetFileName(svgFn));
-                                        reps.Add("%out-fn%", System.IO.Path.GetFileName(bitmapFn));
-
-                                        ProcessLauncher.StartProcess(
-                                            cmd: config.DockerSvg2BitmapCmd,
-                                            args: config.DockerSvgBitmapfArgs, 
-                                            argReplacements: reps,
-                                            lambdaLog: (s) => Console.WriteLine($"    System: {s}"));
-
-                                        wp.ExportEmbeddedPngFile(
-                                            mainPart, act,
-                                            pngFilePath: bitmapFn,
-                                            targetWidthCm: act.TargetWidthCm ?? config.GrammarCodeTargetWidthCm,
-                                            maxHeightCm: config.GrammarCodeMaxHeightCm,
-                                            cropBottomCm: act.CropBottomCm);
-                                    }
-                                }
                             }
                         }
                     }

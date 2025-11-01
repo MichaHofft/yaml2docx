@@ -1,98 +1,98 @@
-grammar = query | AllAccessPermissionRules ;
+Grammar = Query | AllAccessPermissionRules ;
  
-query = [selectStatement], logicalExpression ;
-selectStatement = "$select", ws, "id", ws ;
+Query = [SelectStatement], LogicalExpression ;
+SelectStatement = "$select", Ws, "id", Ws ;
 
-logicalExpression = logicalNestedExpression | logicalOrExpression | logicalAndExpression | logicalNotExpression | matchExpression | BoolLiteral | castToBool | singleComparison ;
+LogicalExpression = LogicalNestedExpression | LogicalOrExpression | LogicalAndExpression | LogicalNotExpression | MatchExpression | BoolLiteral | CastToBool | SingleComparison ;
 
-logicalNestedExpression = "(",  ws, logicalExpression, ")", ws ;
+LogicalNestedExpression = "(",  Ws, LogicalExpression, ")", Ws ;
 
-logicalOrExpression = "$or", ws, "(", ws, logicalExpression, ws, logicalExpression, { ",", ws, logicalExpression }, ")", ws ;
+LogicalOrExpression = "$or", Ws, "(", Ws, LogicalExpression, Ws, LogicalExpression, { ",", Ws, LogicalExpression }, ")", Ws ;
 
-logicalAndExpression = "$and", ws, "(", ws, logicalExpression, ws, logicalExpression, { ",", ws, logicalExpression }, ")", ws ;
+LogicalAndExpression = "$and", Ws, "(", Ws, LogicalExpression, Ws, LogicalExpression, { ",", Ws, LogicalExpression }, ")", Ws ;
 
-logicalNotExpression = "$not", ws, "(", ws, logicalExpression, ")", ws ;
+LogicalNotExpression = "$not", Ws, "(", Ws, LogicalExpression, ")", Ws ;
 
-matchExpression = ( "$match", ws, "(", ws, ( singleComparison | matchExpression), { ",", ws, ( singleComparison | matchExpression) }, ")", ws ) ;
+MatchExpression = ( "$match", Ws, "(", Ws, ( SingleComparison | MatchExpression), { ",", Ws, ( SingleComparison | MatchExpression) }, ")", Ws ) ;
  
-singleComparison =  
-    stringComparison | 
-    numericalComparison | 
-    hexComparison | 
-    boolComparison | 
-    dateTimeComparison | 
-    timeComparison ;
+SingleComparison =  
+    StringComparison | 
+    NumericalComparison | 
+    HexComparison | 
+    BoolComparison | 
+    DateTimeComparison | 
+    TimeComparison ;
  
-allComparisons = ( "$eq" | "$ne" | "$gt" | "$lt" | "$ge" | "$le" ) ;
+AllComparisons = ( "$eq" | "$ne" | "$gt" | "$lt" | "$ge" | "$le" ) ;
 
-stringComparison = 
-    ( ( "$starts-with" | "$ends-with" | "$contains" | "$regex"), ws, "(", ws, stringOperand, ws, ",", ws, stringOperand, ws, ")", ws, ) |
-    ( stringOperand, ws, allComparisons, ws, stringOperand, ws ) |
-    ( stringOperand, ws ,allComparisons, ws, FieldIdentifierString, ws, ) |
-    ( FieldIdentifierString, ws, allComparisons, ws, stringOperand, ws ) ;
+StringComparison = 
+    ( ( "$starts-with" | "$ends-with" | "$contains" | "$regex"), Ws, "(", Ws, StringOperand, Ws, ",", Ws, StringOperand, Ws, ")", Ws, ) |
+    ( StringOperand, Ws, AllComparisons, Ws, StringOperand, Ws ) |
+    ( StringOperand, Ws ,AllComparisons, Ws, FieldIdentifierString, Ws, ) |
+    ( FieldIdentifierString, Ws, AllComparisons, Ws, StringOperand, Ws ) ;
 
-numericalComparison = 
-    ( numericalOperand, ws, allComparisons, ws, numericalOperand, ws ) | 
-    ( numericalOperand, ws, allComparisons, ws, FieldIdentifierString, ws ) | 
-    ( FieldIdentifierString, ws, allComparisons, ws, numericalOperand, ws ) ;
+NumericalComparison = 
+    ( NumericalOperand, Ws, AllComparisons, Ws, NumericalOperand, Ws ) | 
+    ( NumericalOperand, Ws, AllComparisons, Ws, FieldIdentifierString, Ws ) | 
+    ( FieldIdentifierString, Ws, AllComparisons, Ws, NumericalOperand, Ws ) ;
 
-hexComparison =
-    hexOperand, ws, allComparisons, ws, hexOperand, ws ;
+HexComparison =
+    HexOperand, Ws, AllComparisons, Ws, HexOperand, Ws ;
 
-boolComparison =
-    boolOperand, ws, ( "$eq" | "$ne" ), ws, boolOperand, ws ;
+BoolComparison =
+    BoolOperand, Ws, ( "$eq" | "$ne" ), Ws, BoolOperand, Ws ;
 
-dateTimeComparison =
-    dateTimeOperand, ws, allComparisons, ws, dateTimeOperand, ws ;
+DateTimeComparison =
+    DateTimeOperand, Ws, AllComparisons, Ws, DateTimeOperand, Ws ;
  
-dateTimeToNum =
-    ( "$dayOfWeek",  | "$dayOfMonth",  | "$month",  | "$year" ), ws, "(", ws, dateTimeOperand, ws, ")", ws ;
+DateTimeToNum =
+    ( "$dayOfWeek",  | "$dayOfMonth",  | "$month",  | "$year" ), Ws, "(", Ws, DateTimeOperand, Ws, ")", Ws ;
 
-timeComparison =
-    timeOperand, ws, allComparisons, ws, timeOperand, ws ;
+TimeComparison =
+    TimeOperand, Ws, AllComparisons, Ws, TimeOperand, Ws ;
 
-operand = stringOperand | numericalOperand | hexOperand | boolOperand | dateTimeOperand | timeOperand ;
+Operand = StringOperand | NumericalOperand | HexOperand | BoolOperand | DateTimeOperand | TimeOperand ;
 
-stringOperand =
-    FieldIdentifierString | StringLiteral | castToString | SingleAttribute ;
+StringOperand =
+    FieldIdentifierString | StringLiteral | CastToString | SingleAttribute ;
  
-numericalOperand =
-    NumericalLiteral | castToNumerical | dateTimeToNum ;
+NumericalOperand =
+    NumericalLiteral | CastToNumerical | DateTimeToNum ;
  
-hexOperand =
-    HexLiteral | castToHex ;
+HexOperand =
+    HexLiteral | CastToHex ;
 
-boolOperand =
-    BoolLiteral | castToBool ;
+BoolOperand =
+    BoolLiteral | CastToBool ;
  
-dateTimeOperand =
-    DateTimeLiteral | castToDateTime | GlobalAttribute ;
+DateTimeOperand =
+    DateTimeLiteral | CastToDateTime | GlobalAttribute ;
  
-timeOperand =
-    TimeLiteral | castToTime ;
+TimeOperand =
+    TimeLiteral | CastToTime ;
  
-castToString =
-    "str",  ws, "(",  ws, operand, ws, ")", ws ;
+CastToString =
+    "str",  Ws, "(",  Ws, Operand, Ws, ")", Ws ;
  
-castToNumerical =
-    "num",  ws, "(",  ws, operand, ws, ")", ws ;
+CastToNumerical =
+    "num",  Ws, "(",  Ws, Operand, Ws, ")", Ws ;
  
-castToHex =
-    "hex",  ws, "(",  ws, operand, ws, ")", ws ;
+CastToHex =
+    "hex",  Ws, "(",  Ws, Operand, Ws, ")", Ws ;
  
-castToBool =
-    "bool",  ws, "(",  ws, operand, ws, ")", ws ;
+CastToBool =
+    "bool",  Ws, "(",  Ws, Operand, Ws, ")", Ws ;
  
-castToDateTime =
-    "dateTime",  ws, "(",  ws, stringOperand, ws, ")",  ws ;
+CastToDateTime =
+    "dateTime",  Ws, "(",  Ws, StringOperand, Ws, ")",  Ws ;
  
-castToTime =
-    "time",  ws, "(",  ws, ( stringOperand | dateTimeOperand ), ws, ")", ws ;
+CastToTime =
+    "Time",  Ws, "(",  Ws, ( StringOperand | DateTimeOperand ), Ws, ")", Ws ;
  
-AllAccessDefAttributes = { "DEFATTRIBUTES", ws, StringLiteral, ws, AttributeGroup, ws, } ;
-AllAccessDefAcls = { "DEFACLS",  ws, StringLiteral, ws, ACL, ws } ;
-AllAccessDefObjects = { "DEFOBJECTS",  ws, StringLiteral, ws, ObjectGroup, ws } ;
-AllAccessDefFormulas = { "DEFFORMULAS",  ws, StringLiteral, ws, Condition, ws } ;
+AllAccessDefAttributes = { "DEFATTRIBUTES", Ws, StringLiteral, Ws, AttributeGroup, Ws, } ;
+AllAccessDefAcls = { "DEFACLS",  Ws, StringLiteral, Ws, ACL, Ws } ;
+AllAccessDefObjects = { "DEFOBJECTS",  Ws, StringLiteral, Ws, ObjectGroup, Ws } ;
+AllAccessDefFormulas = { "DEFFORMULAS",  Ws, StringLiteral, Ws, Condition, Ws } ;
  
 AllAccessPermissionDefs =
     AllAccessDefAttributes,
@@ -102,33 +102,33 @@ AllAccessPermissionDefs =
 
 AllAccessPermissionRules =
     AllAccessPermissionDefs,
-    { AccessPermissionRule, ws } ;
+    { AccessPermissionRule, Ws } ;
 	
-AccessFilter = "FILTER:", ws, FragmentObject, ws, ( Condition | UseFormula );
+AccessFilter = "FILTER:", Ws, FragmentObject, Ws, ( Condition | UseFormula );
 
-AccessFormula = "FORMULA:", ws, ( Condition | UseFormula ), ws ;
+AccessFormula = "FORMULA:", Ws, ( Condition | UseFormula ), Ws ;
  
-AccessAccessRule = "ACCESSRULE:", ws, ( ACL | UseACL ), ws ;
+AccessAccessRule = "ACCESSRULE:", Ws, ( ACL | UseACL ), Ws ;
  
-AccessObjects = "OBJECTS:", ws, { SingleObject, ws }, { UseObjectGroup, ws } ;
+AccessObjects = "OBJECTS:", Ws, { SingleObject, Ws }, { UseObjectGroup, Ws } ;
  
 AccessPermissionRule =
     AccessAccessRule,
     AccessObjects,
     AccessFormula,
-    [ AccessFilter, ws ] ;
+    [ AccessFilter, Ws ] ;
 
-AclAttributes = "ATTRIBUTES:", ws, 
-    { SingleAttribute, ws },
-    { UseAttributeGroup, ws } ;
+AclAttributes = "ATTRIBUTES:", Ws, 
+    { SingleAttribute, Ws },
+    { UseAttributeGroup, Ws } ;
 
 ACL =
     AclAttributes,
-    "RIGHTS:", ws, Right, ws, { Right, ws },
-    "ACCESS:", ws, Access, ws ;
+    "RIGHTS:", Ws, Right, Ws, { Right, Ws },
+    "ACCESS:", Ws, Access, Ws ;
  
 UseACL =
-    "USEACLS",  ws, StringLiteral, ws ;
+    "USEACLS",  Ws, StringLiteral, Ws ;
  
 Right =
     "CREATE" | "READ" | "UPDATE" | "DELETE" | "EXECUTE" | "VIEW" | "ALL" | "TREE"  ;
@@ -140,66 +140,66 @@ SingleAttribute =
     ClaimAttribute | GlobalAttribute | ReferenceAttribute ;
 
 ClaimAttribute =
-    "CLAIM", ws, "(", ws, ClaimLiteral, ws, ")" ;
+    "CLAIM", Ws, "(", Ws, ClaimLiteral, Ws, ")" ;
  
 GlobalAttribute =
-    "GLOBAL", ws, "(", ws, ( "LOCALNOW" | "UTCNOW" | "CLIENTNOW" | "ANONYMOUS" ), ws, ")" ;
+    "GLOBAL", Ws, "(", Ws, ( "LOCALNOW" | "UTCNOW" | "CLIENTNOW" | "ANONYMOUS" ), Ws, ")" ;
  
 ReferenceAttribute =
-    "REFERENCE", ws, "(", ws, ReferenceLiteral, ws, ")" ;
+    "REFERENCE", Ws, "(", Ws, ReferenceLiteral, Ws, ")" ;
 
 AttributeGroup =
-    { SingleAttribute, ws },
-    { UseAttributeGroup, ws } ;
+    { SingleAttribute, Ws },
+    { UseAttributeGroup, Ws } ;
 
 UseAttributeGroup =
-    "USEATTRIBUTES", ws, StringLiteral, ws ;
+    "USEATTRIBUTES", Ws, StringLiteral, Ws ;
  
 SingleObject =
     RouteObject | IdentifiableObject | ReferableObject | FragmentObject | DescriptorObject ;
  
 RouteObject =
-    "ROUTE", ws, RouteLiteral, ws ;
+    "ROUTE", Ws, RouteLiteral, Ws ;
  
 IdentifiableObject =
-    "IDENTIFIABLE", ws, IdentifiableLiteral, ws ;
+    "IDENTIFIABLE", Ws, IdentifiableLiteral, Ws ;
  
 ReferableObject =
-    "REFERABLE", ws, ReferableLiteral, ws ;
+    "REFERABLE", Ws, ReferableLiteral, Ws ;
  
 FragmentObject =
-    "FRAGMENT", ws, FragmentLiteral, ws ;
+    "FRAGMENT", Ws, FragmentLiteral, Ws ;
 DescriptorObject =
-    "DESCRIPTOR", ws, DescriptorLiteral, ws ;
+    "DESCRIPTOR", Ws, DescriptorLiteral, Ws ;
  
 ObjectGroup =
-    { SingleObject, ws },
-    | { UseObjectGroup, ws } ;
+    { SingleObject, Ws },
+    | { UseObjectGroup, Ws } ;
  
 UseObjectGroup =
-    "USEOBJECTS", ws, StringLiteral, ws ;
+    "USEOBJECTS", Ws, StringLiteral, Ws ;
  
 UseFormula =
-    "USEFORMULAS", ws, StringLiteral, ws ;
+    "USEFORMULAS", Ws, StringLiteral, Ws ;
  
-Condition = logicalExpression, ws ;
+Condition = LogicalExpression, Ws ;
 
-DateTimeLiteral = datetime, ws ;
-TimeLiteral = time, ws ;
-datetime = date, ws, ( "T" | " " ), ws, time, ws, { timezone, ws } ;
-date = year, ws, "-", ws, month, ws, "-", ws, day, ws ;
-year = digit, ws, digit, ws, digit, ws, digit, ws ;
-month = digit, ws, digit, ws ;
-day = digit, ws, digit, ws ;
-time = hour, ws, ":", ws, minute, ws, { ":", ws, second, ws }, { ".", ws, fraction, ws } ;
-timezone = ( "Z" | ( "+" | "-" ), ws, hour, ws, ":", ws, minute, ws ) ;
-hour = digit, ws, digit, ws ;
-minute = digit, ws, digit, ws ;
-second = digit, ws, digit, ws ;
-fraction = digit, { digit }, ws ;
+DateTimeLiteral = DateTime, Ws ;
+TimeLiteral = Time, Ws ;
+DateTime = Date, Ws, ( "T" | " " ), Ws, Time, Ws, { Timezone, Ws } ;
+Date = Year, Ws, "-", Ws, Month, Ws, "-", Ws, Day, Ws ;
+Year = Digit, Ws, Digit, Ws, Digit, Ws, Digit, Ws ;
+Month = Digit, Ws, Digit, Ws ;
+Day = Digit, Ws, Digit, Ws ;
+Time = Hour, Ws, ":", Ws, Minute, Ws, { ":", Ws, Second, Ws }, { ".", Ws, Fraction, Ws } ;
+Timezone = ( "Z" | ( "+" | "-" ), Ws, Hour, Ws, ":", Ws, Minute, Ws ) ;
+Hour = Digit, Ws, Digit, Ws ;
+Minute = Digit, Ws, Digit, Ws ;
+Second = Digit, Ws, Digit, Ws ;
+Fraction = Digit, { Digit }, Ws ;
 
-digit = ( "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ) ;
-digitWs = digit, ws ;
+Digit = ( "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ) ;
+DigitWs = Digit, Ws ;
 UpperAtoF = "A" | "B" | "C" | "D" | "E" | "F" ;
 
 UpperAtoZ = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
@@ -209,7 +209,7 @@ LowerAtoZ = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j"
           | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t"
           | "u" | "v" | "w" | "x" | "y" | "z" ;
 
-StringChar = UpperAtoZ | LowerAtoZ | digit | '/' | '*' | '[' | ']' | '(' | ')' | ' ' | '@' | '#' | '\\' | '+' | '-' | '.' | ',' | ':' | '$' | '^' | '_' ;
+StringChar = UpperAtoZ | LowerAtoZ | Digit | '/' | '*' | '[' | ']' | '(' | ')' | ' ' | '@' | '#' | '\\' | '+' | '-' | '.' | ',' | ':' | '$' | '^' | '_' ;
 	
 StringLiteral = '"', StringChar, { StringChar }, '"' ;
 
@@ -221,22 +221,22 @@ ReferableLiteral = StringLiteral ;
 FragmentLiteral = StringLiteral ;
 DescriptorLiteral = StringLiteral ;
 
-NumericalLiteral = [ "+" | "-" ], digit, { digit }, [ ( ".", { digit } ) | ( ".", digit, { digit } ) ], [ ( "e" | "E" ), [ "+" | "-" ], digit, { digit } ] ;
-HexLiteral = "16#", ( digit | UpperAtoF ), { digit | UpperAtoF } ;
+NumericalLiteral = [ "+" | "-" ], Digit, { Digit }, [ ( ".", { Digit } ) | ( ".", Digit, { Digit } ) ], [ ( "e" | "E" ), [ "+" | "-" ], Digit, { Digit } ] ;
+HexLiteral = "16#", ( Digit | UpperAtoF ), { Digit | UpperAtoF } ;
 BoolLiteral = "true" | "false" ;
 FieldIdentifier = FieldIdentifierString ;
 FieldIdentifierString = FieldIdentifierAAS | FieldIdentifierSM | FieldIdentifierSME | FieldIdentifierCD | FieldIdentifierAasDescriptor | FieldIdentifierSmDescriptor ;
-FieldIdentifierAAS = "$aas#", ( "idShort" | "id" | "assetInformation.assetKind" | "assetInformation.assetType" | "assetInformation.globalAssetId" | ( "assetInformation.", SpecificAssetIdsClause ) | ( "submodels.", ReferenceClause ) ) ;
-FieldIdentifierSM = "$sm#", ( SemanticIdClause | "idShort" | "id" ) ;
-FieldIdentifierSME = "$sme", { ".", idShortPath }, "#", ( SemanticIdClause | "idShort" | "value" | "valueType" | "language" ) ;
-FieldIdentifierCD = "$cd#", ( "idShort" | "id" ), ws ;
-FieldIdentifierAasDescriptor = "$aasdesc#", ( "idShort" | "id" | "assetKind" | "assetType" | "globalAssetId" | SpecificAssetIdsClause | ( "endpoints", ( "[", { digit }, "]" ), ".", EndpointClause ) | ( "submodelDescriptors", ( "[", { digit }, "]" ), ".", SmDescriptorClause )) ;
+FieldIdentifierAAS = "$aas#", ( "IdShort" | "id" | "assetInformation.assetKind" | "assetInformation.assetType" | "assetInformation.globalAssetId" | ( "assetInformation.", SpecificAssetIdsClause ) | ( "submodels.", ReferenceClause ) ) ;
+FieldIdentifierSM = "$sm#", ( SemanticIdClause | "IdShort" | "id" ) ;
+FieldIdentifierSME = "$sme", { ".", IdShortPath }, "#", ( SemanticIdClause | "IdShort" | "value" | "valueType" | "language" ) ;
+FieldIdentifierCD = "$cd#", ( "IdShort" | "id" ), Ws ;
+FieldIdentifierAasDescriptor = "$aasdesc#", ( "IdShort" | "id" | "assetKind" | "assetType" | "globalAssetId" | SpecificAssetIdsClause | ( "endpoints", ( "[", { Digit }, "]" ), ".", EndpointClause ) | ( "submodelDescriptors", ( "[", { Digit }, "]" ), ".", SmDescriptorClause )) ;
 FieldIdentifierSmDescriptor = "$smdesc#", SmDescriptorClause ;
-SmDescriptorClause = ( SemanticIdClause | "idShort" | "id" | ( "endpoints", ( "[", { digit }, "]" ), ".", EndpointClause ) ) ;
+SmDescriptorClause = ( SemanticIdClause | "IdShort" | "id" | ( "endpoints", ( "[", { Digit }, "]" ), ".", EndpointClause ) ) ;
 EndpointClause = "interface" | "protocolinformation.href"  ;
-ReferenceClause = ( "type" | ( "keys", ( "[", { digit }, "]" ) ), ( ".type" | ".value" ) ) ;
+ReferenceClause = ( "type" | ( "keys", ( "[", { Digit }, "]" ) ), ( ".type" | ".value" ) ) ;
 SemanticIdClause = ( "semanticId" | ( "semanticId.", ReferenceClause ) ) ;
-SpecificAssetIdsClause =  ( "specificAssetIds", ( "[", { digit }, "]" ), ( ".name" | ".value" | ".externalSubjectId" | ( ".externalSubjectId.",  ReferenceClause ) ) ) ;
-idShortPath = ( idShort, [ "[", { digit }, "]" ], { ".", idShortPath } ) ;
-idShort = ( LowerAtoZ | UpperAtoZ ), { LowerAtoZ | UpperAtoZ | digit | "_" } ;
-ws = { " " | "\t" | "\r" | "\n" } ;
+SpecificAssetIdsClause =  ( "specificAssetIds", ( "[", { Digit }, "]" ), ( ".name" | ".value" | ".externalSubjectId" | ( ".externalSubjectId.",  ReferenceClause ) ) ) ;
+IdShortPath = ( IdShort, [ "[", { Digit }, "]" ], { ".", IdShortPath } ) ;
+IdShort = ( LowerAtoZ | UpperAtoZ ), { LowerAtoZ | UpperAtoZ | Digit | "_" } ;
+Ws = { " " | "\t" | "\r" | "\n" } ;
