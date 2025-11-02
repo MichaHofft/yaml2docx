@@ -734,6 +734,7 @@ createWordFiles:
       - AasSubmodelElements
       - AbstractLangString
       - HasDataSpecification
+      - RelationshipElement_abstract
       suppressMembers:
       - embeddedDataSpecifications
       - modelType

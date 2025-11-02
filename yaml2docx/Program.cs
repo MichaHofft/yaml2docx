@@ -28,7 +28,7 @@ namespace Yaml2Docx
 
             // load configuration
             var config = YamlConfig.Load(".\\configs\\yaml2docx_config.yaml");
-            var wp = new ExportIecInterfaceOperation(config);
+            var wp = new ExportWord(config);
 
             foreach (var wfn in config.CreateWordFiles)
             {
@@ -66,7 +66,7 @@ namespace Yaml2Docx
                         if (mainPart.StyleDefinitionsPart == null)
                         {
                             var stylePart = mainPart.AddNewPart<StyleDefinitionsPart>();
-                            ExportIecInterfaceOperation.GenerateDefaultStyles(stylePart);
+                            ExportWord.GenerateDefaultStyles(stylePart);
                         }
                     } 
                     else
@@ -83,7 +83,7 @@ namespace Yaml2Docx
                     // list styles
                     if (wfn.ListStyles)
                     {
-                        ExportIecInterfaceOperation.ListStyleNames(mainPart, prefix: "    ");
+                        ExportWord.ListStyleNames(mainPart, prefix: "    ");
                     }
 
                     // rail road files .. dead end?
@@ -362,14 +362,14 @@ namespace Yaml2Docx
                             if (actName == "exportoverview")
                             {
                                 // make a list of annotated operations
-                                var listOfOps = new List<ExportIecInterfaceOperation.OperationTuple>();
+                                var listOfOps = new List<ExportWord.OperationTuple>();
                                 int nOK = 0, nNOK = 0;
                                 foreach (var opEntry in rof.UseOperations)
                                 {
                                     var op = doc.FindApiOperation(opEntry.Key);
                                     if (op != null)
                                     {
-                                        listOfOps.Add(new ExportIecInterfaceOperation.OperationTuple(opEntry.Value, op));
+                                        listOfOps.Add(new ExportWord.OperationTuple(opEntry.Value, op));
                                         nOK++;
                                     }
                                     else
