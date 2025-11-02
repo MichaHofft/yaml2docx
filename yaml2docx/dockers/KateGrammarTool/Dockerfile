@@ -15,9 +15,9 @@ RUN apt-get update && \
         libgraphviz-dev \
         libexpat1-dev \
         libxml2-dev \
+        ca-certificates \
         && rm -rf /var/lib/apt/lists/*
 
-#        ca-certificates \
 # Clone and build kgt
 WORKDIR /opt
 RUN git clone --recursive https://github.com/katef/kgt.git && \

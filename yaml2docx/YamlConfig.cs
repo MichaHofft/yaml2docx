@@ -244,6 +244,11 @@ namespace Yaml2Docx
 
             public int PatternInlineLimit = 80;
 
+            public List<string> GlobalReplacements = new();
+
+            [YamlIgnore]
+            public GlobalReplacements Reps = new();
+
             public List<CreateWordFile> CreateWordFiles = new();
         }
 
@@ -256,6 +261,7 @@ namespace Yaml2Docx
                 // .IgnoreUnmatchedProperties()
                 .Build();
             var cfg = deserializer.Deserialize<ExportConfig>(yml);
+            cfg.Reps.ParseListOfString(cfg.GlobalReplacements);
             return cfg;
         }
     }

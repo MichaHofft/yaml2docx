@@ -34,7 +34,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/QueryExpression"
+              $ref: "#/components/schemas/Query"
         required: true
       responses:
         "200":
@@ -76,7 +76,7 @@ components:
     #
     # QUERY fron JSON
     #
-    QueryExpression:
+    Query:
       type: object
       properties:
         $select:
@@ -179,7 +179,7 @@ components:
       type: object
       properties:
         Query:
-          $ref: "#/components/schemas/QueryExpression"
+          $ref: "#/components/schemas/Query"
         AllAccessPermissionRules:
           $ref: "#/components/schemas/AllAccessPermissionRules"
       oneOf:
@@ -461,10 +461,10 @@ components:
         global:
           type: string
           enum:
-            - LocalNow
-            - UtcNow
-            - ClientNow
-            - Anonymous
+            - LOCALNOW
+            - UTCNOW
+            - CLIENTNOW
+            - ANONYMOUS
         reference:
           type: string
       additionalProperties: false
@@ -495,14 +495,14 @@ components:
     RightsEnum:
       type: string
       enum:
-        - Create
-        - Read
-        - Update
-        - Delete
-        - Execute
-        - View
-        - All
-        - Tree
+        - CREATE
+        - READ
+        - UPDATE
+        - DELETE
+        - EXECUTE
+        - VIEW
+        - ALL
+        - TREE
       additionalProperties: false
     ACL:
       type: object
@@ -520,8 +520,8 @@ components:
         access:
           type: string
           enum:
-            - Allow
-            - Disabled
+            - ALLOW
+            - DISABLED
       required:
         - rights
         - access

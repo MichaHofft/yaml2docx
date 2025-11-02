@@ -46,6 +46,8 @@ originSchemaOrder:
 - DataElement
 suppressSchemaNames:
 - modelType
+globalReplacements:
+- "ColumnFrom|FullMatch|RelationshipElement_abstract|RelationshipElement"
 createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
@@ -876,10 +878,12 @@ createWordFiles:
       - RightsEnum
       - StringValue
       - EmbeddedDataSpecification
+      - HasDataSpecification
+      - ModelType
       includeSchemas: 
       - GetAssetAdministrationShellsResult
       - PagedResult
-      - QueryExpression
+      - Query
       - Value
       - AccessPermissionRule
       - StringValue
