@@ -13,8 +13,8 @@ namespace Yaml2Docx
     public class GlobalReplacements
     {
         public enum Where { 
-            Unknown,
-            ColumnFrom
+            Unknown     = 0x0000,
+            ColumnFrom  = 0x0001
         }
 
         public enum How
@@ -35,8 +35,9 @@ namespace Yaml2Docx
         public Where ParseWhere(string input)
         {
             input = input.Trim().ToLower();
-            if (input == "columnfrom") return Where.ColumnFrom;
-            return Where.Unknown;
+            var res = Where.Unknown;
+            if (input == "columnfrom") res = res | Where.ColumnFrom;
+            return res;
         }
 
         public How ParseHow(string input)
@@ -74,6 +75,34 @@ namespace Yaml2Docx
                 _items.Add(i);
                 res++;
             }
+            return res;
+        }
+
+        public string? CheckReplace(Where where, string? input)
+        {
+            // access
+            string? res = input;
+            if (res == null)
+                return res;
+
+            // most primitive approach first: always iterate thru
+            foreach (var it in _items)
+            {
+                // where matches?
+                if ((it.Where & where) == 0)
+                    continue;
+
+                // how?
+                if (it.How == How.FullMatch)
+                {
+                    if (input == it.From)
+                    {
+                        res = it.To;
+                        break;
+                    }
+                }
+            }
+
             return res;
         }
     }
