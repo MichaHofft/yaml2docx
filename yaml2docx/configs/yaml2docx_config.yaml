@@ -335,32 +335,33 @@ createWordFiles:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS based on the provided AAS identifier.
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        outputs:
-        - all: payload|Requested Asset Administration Shell|true|AssetAdministrationShell|1
+        responseBodyName: result
       PutAssetAdministrationShell:
         body: The interface operation described in Table %table-ref% allows to replace/ update a complete specific AAS.
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        - all: aas|Provided new Asset Administration Shell that should be used instead|true|AssetAdministrationShell|1 
-        outputs:
-        - all: payload|Replaced Asset Administration Shell|true|AssetAdministrationShell|1
+        requestBodyName: aas
+        responseBodyName: result
       GetAllSubmodelReferences:
         body: The interface operation described in Table %table-ref% allows to return all Submodel references contained in a specific AAS. 
         # TODO IDTA OpenAPI files: Submodel with capital first letter
         explanation: Returns all Submodel references
+        suppressInputs: 
+        - level
+        - extent
+        - limit
+        - cursor
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        outputs:
-        - all: payload|Requested Submodel References|true|Reference|0..*
+        responseBodyName: result
       PostSubmodelReference:
         body: The interface operation described in Table %table-ref% enhances the list of Submodel references of an associated AAS by a new provided Submodel reference.  
         # TODO IDTA OpenAPI files: Submodel with capital first letter
         explanation: Creates a Submodel reference at the Asset Administration Shell
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        - all: submodelRef|Reference to the Submodel|true|Reference|1
-        outputs:
-        - all: payload|Created Submodel Reference|true|Reference|1
+        requestBodyName: submodelRef
+        responseBodyName: result
       DeleteSubmodelReference:
         body: The interface operation described in Table %table-ref% removes a specific Submodel reference from the list of Submodel references of an associated AAS.
         # TODO IDTA OpenAPI files: Submodel with capital first letter
@@ -370,25 +371,23 @@ createWordFiles:
         - extent
         - limit
         - cursor
-        - submodelIdentifier
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        - all: submodelId|The unique id of the Submodel for the reference to be deleted|true|Identifier|1
+        requestBodyName: submodelRef
       GetAssetInformation:
         body: The interface operation described in Table %table-ref% returns related asset information of an associated AAS. 
         # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
         explanation: Returns the asset information
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        outputs:
-        - all: payload|Requested Asset Information|true|AssetInformation|1
+        responseBodyName: result
       PutAssetInformation:
         body: The interface operation described in Table %table-ref% allows to set or update asset-based information of an associated AAS. 
         # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
         explanation: Updates the asset information
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        - all: assetInfo|Asset Information|true|AssetInformation|1
+        requestBodyName: assetInfo
       GetThumbnail:
         body: The interface operation described in Table %table-ref% allows to request for a thumbnail file of an associated AAS.
         # TODO IDTA OpenAPI files: No Text!
@@ -397,15 +396,14 @@ createWordFiles:
         - Thumbnail refers to a reduced size image of the asset (see IEC 63278-2). 
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        outputs:
-        - all: payload|Requested thumbnail file|true|File Content|1
+        responseBodyName: result
       PutThumbnail:
         body: The interface operation described in Table %table-ref% allows to set or update a thumbnail file of an associated AAS. 
         # TODO IDTA OpenAPI files: No Text!
         explanation: Replaces the thumbnail file of an associated AAS.
         inputs:
         - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
-        - all: file|Thumbnail file|true|File Content|1
+        requestBodyName: file
       DeleteThumbnail:
         body: The interface operation described in Table %table-ref% allows to remove a thumbnail file of an associated AAS.
         # TODO IDTA OpenAPI files: No Text!
@@ -732,6 +730,110 @@ createWordFiles:
       DeleteSubmodelById:
         explanation: Deletes a Submodel
         body: The interface operation described in Table %table-ref% deletes an existing Submodel in the Submodel repository. The Submodel is identified by its unique identifier.   
+  #
+  # AAS REGISTRY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRegistryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: AAS registry interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The interface operations in this section make it possible to refer to Asset Administration Shells in a number of computing environments. The AAS registry stores so called AAS descriptors, which refer the AAS user application asking for it to a specific Asset Administration Shell to be retrieved via the AAS administration interface. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsAasRepo
+      GetAllAssetAdministrationShellDescriptors:
+        explanation: Returns specific AAS descriptions within the AAS registry.
+        body: The interface operation described in Table %table-ref% allows to request for all AAS descriptors within the AAS registry or to restrict the results by optional input parameters, such as specific asset kind or asset type attributes.
+        suppressInputs: 
+        - limit
+        - cursor
+        responseBodyName: result
+      GetAssetAdministrationShellDescriptorById:
+        explanation: Returns a specific AAS descriptor within the AAS registry.
+        body: The interface operation described in Table %table-ref% allows to request a specific AAS descriptor within the AAS registry ogiven by its identifier.
+        suppressInputs: 
+        - limit
+        - cursor
+        responseBodyName: result
+      PostAssetAdministrationShellDescriptor:
+        explanation: Creates a new AAS descriptor, that is, registers a new AAS to be refered to.
+        body: The interface operation described in Table %table-ref% creates a new AAS descriptor within the AAS registry. The AAS, which is referred to, shall exist in the AAS descriptor specified location. 
+        requestBodyName: aasDescriptor
+        responseBodyName: result
+      PutAssetAdministrationShellDescriptorById:
+        explanation: Creates or updates an existing AAS descriptor
+        body: The interface operation described in Table %table-ref% creates or updates a AAS descriptor within the AAS registry. The AAS, which is referred to, shall exist in the AAS descriptor specified location. 
+        requestBodyName: aasDescriptor
+        responseBodyName: result
+      DeleteAssetAdministrationShellDescriptorById:
+        explanation: Deletes an existing AAS descriptor
+        body: The interface operation described in Table %table-ref% deletes an existing AAS descriptor in the AAS registry.
+  #
+  # Submodel REGISTRY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-SubmodelRegistryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Submodel registry interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The interface operations in this section make it possible to refer to Submodels in a number of computing environments. The Submodel registry stores so called Submodel descriptors, which refer the AAS user application asking for it to a specific Submodel to be retrieved via the Submodel interface. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsAasRepo
+      GetAllSubmodelDescriptors:
+        explanation: Returns all Submodel descriptors within the Submodel registry.
+        body: The interface operation described in Table %table-ref% allows to request for all Submodel descriptors within the Submodel registry.
+        suppressInputs: 
+        - limit
+        - cursor
+        responseBodyName: result
+      GetSubmodelDescriptorById:
+        explanation: Returns a specific Submodel descriptor within the Submodel registry.
+        body: The interface operation described in Table %table-ref% allows to request for a specific Submodel descriptor within the Submodel registry.
+        suppressInputs: 
+        - limit
+        - cursor
+        responseBodyName: result
+      PostSubmodelDescriptor:
+        explanation: Creates a new Submodel descriptor, that is, registers a new Submodel to be refered to.
+        body: The interface operation described in Table %table-ref% creates a new Submodel descriptor within the Submodel registry. The Submodel, which is referred to, shall exist in the Submodel descriptor specified location. 
+        requestBodyName: submodelDescriptor
+        responseBodyName: result
+      PutSubmodelDescriptorById:
+        explanation: Creates or updates an existing Submodel descriptor
+        body: The interface operation described in Table %table-ref% creates or updates a Submodel descriptor within the Submodel registry. The Submodel, which is referred to, shall exist in the Submodel descriptor specified location. 
+        requestBodyName: submodelDescriptor
+        responseBodyName: result
+      DeleteSubmodelDescriptorById:
+        explanation: Deletes an existing Submodel descriptor
+        body: The interface operation described in Table %table-ref% deletes an existing Submodel descriptor in the Submodel registry.
   #
   # Second pass: YAML (currently, both as Code and Table)
   #

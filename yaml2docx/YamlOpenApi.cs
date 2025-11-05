@@ -196,7 +196,10 @@ namespace Yaml2Docx
         {
             public string? Type;
             public string? Example;
-            
+
+            public int? MinLength;
+            public int? MaxLength;
+
             [YamlDotNet.Serialization.YamlMember(Alias = "$ref", ApplyNamingConventions = false)]
             public string? Ref;
 

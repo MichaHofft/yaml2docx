@@ -142,7 +142,7 @@ namespace Yaml2Docx
             // Response body .. treated as output
             //
 
-            if (op?.OperationId == "DeleteAssetAdministrationShellById")
+            if (op?.OperationId == "GetThumbnail")
                 ;
 
             var contentAdded = false;
@@ -168,12 +168,22 @@ namespace Yaml2Docx
                         // Invisible to the reader: multiple content types/ schemas, take the first as type
                         var contentFound = false;
                         foreach (var cntTup in resp.Value.Content)
+                        {
                             if (cntTup.Value?.Schema?.Ref != null)
                             {
                                 pi.Type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref) ?? "\u2014";
                                 contentFound = true;
                                 break;
                             }
+                            if (cntTup.Value?.Schema?.Type != null)
+                            {
+                                pi.Type = cntTup.Value.Schema.Type;
+                                if (cntTup.Value.Schema.Format != null && cntTup.Value.Schema.Format.Length > 0)
+                                    pi.Type += $"({cntTup.Value.Schema.Format})";
+                                contentFound = true;
+                                break;
+                            }
+                        }
 
                         // anything there
                         if (contentFound)
