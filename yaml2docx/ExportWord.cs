@@ -7,7 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Extensions;
@@ -15,13 +17,10 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization.ObjectGraphVisitors;
-
-using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
-using A = DocumentFormat.OpenXml.Drawing;
-using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
-
 using static Yaml2Docx.YamlOpenApi;
-using System.Xml.Schema;
+using A = DocumentFormat.OpenXml.Drawing;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
 namespace Yaml2Docx
 {
@@ -99,20 +98,30 @@ namespace Yaml2Docx
                 styleId: $"{_config.BodyStyle}",
                 substitutions: substs));
 
-            // Create input, output parameters
+            // Notes
+            if (opConfig?.Notes != null)
+            {
+                // add notes per default at the end of the table
+                int noteNo = 1;
+                foreach (var note in opConfig.Notes)
+                    body.AppendChild(CreateParagraph(
+                        $"NOTE {(opConfig.Notes.Count > 1 ? (noteNo++).ToString() : "")}  {note}",
+                        styleId: $"{_config.NoteStyle}"));
+            }
+
+            // collect and modify lists of inputs, outputs
             YamlConfig.ParameterInfoList inputs = new();
             if (_config.Inputs != null)
                 inputs.AddRange(_config.Inputs);
-            if (opConfig?.Inputs != null)
-                inputs.AddOrReplace(opConfig.Inputs);
-
+            
             YamlConfig.ParameterInfoList outputs = new();
             if (_config.Outputs != null)
                 outputs.AddRange(_config.Outputs);
-            if (opConfig?.Outputs != null)
-                outputs.AddOrReplace(opConfig.Outputs);
 
+            //
             // turn the operation's parameters into inputs
+            //
+
             if (op.Parameters != null)
                 foreach (var param in op.Parameters)
                 {
@@ -129,6 +138,70 @@ namespace Yaml2Docx
                     inputs.AddOrReplace(pi);
                 }
 
+            //
+            // Response body .. treated as output
+            //
+
+            if (op?.OperationId == "DeleteAssetAdministrationShellById")
+                ;
+
+            var contentAdded = false;
+            if (op?.Responses != null && op?.Responses.Count > 0)
+                foreach (var resp in op.Responses)
+                {
+                    // filter out only the 200 range
+                    if (resp.Key?.StartsWith("2") != true || resp.Value == null)
+                        continue;
+
+                    // content
+                    if (!contentAdded && resp.Value.Content != null)
+                    {
+                        var pi = new YamlConfig.ParameterInfo()
+                        {
+                            Name = opConfig?.ResponseBodyName ?? "responseBody",
+                            Description = resp.Value.Description ?? "\u2014",
+                            Mandatory = true,
+                            Type = "\u2014",
+                            Card = "1"
+                        };
+
+                        // Invisible to the reader: multiple content types/ schemas, take the first as type
+                        var contentFound = false;
+                        foreach (var cntTup in resp.Value.Content)
+                            if (cntTup.Value?.Schema?.Ref != null)
+                            {
+                                pi.Type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref) ?? "\u2014";
+                                contentFound = true;
+                                break;
+                            }
+
+                        // anything there
+                        if (contentFound)
+                        {
+                            // add it
+                            outputs.Add(pi);
+
+                            // after the first 200er, we're done
+                            contentAdded = true;
+                        }
+                    }
+
+                    // header
+                    if (resp.Value.Headers != null && resp.Value.Headers.Count > 0)
+                        foreach (var hc in resp.Value.Headers)
+                        {
+                            var pi = new YamlConfig.ParameterInfo()
+                            {
+                                Name = hc.Key,
+                                Description = hc.Value.Description ?? "\u2014",
+                                Mandatory = true,
+                                Type = hc.Value.Schema?.Type ?? "\u2014",
+                                Card = "1"
+                            };
+                            outputs.Add(pi);
+                        }
+                }
+
             // ok, suppress, BUT EXCLUSIVE in groups
             if (opConfig?.SuppressInputs != null)
             {
@@ -142,9 +215,9 @@ namespace Yaml2Docx
                     inputs.RemoveByName(name);
             }
 
-            if (_config.SuppressOutputs != null)
+            if (opConfig?.SuppressOutputs != null)
             {
-                foreach (var name in _config.SuppressOutputs)
+                foreach (var name in opConfig.SuppressOutputs)
                     inputs.RemoveByName(name);
             }
             else
@@ -152,10 +225,20 @@ namespace Yaml2Docx
             {
                 foreach (var name in _config.SuppressOutputs)
                     inputs.RemoveByName(name);
-            }                      
+            }
+
+            // Create input, output parameters ("last word")
+            if (opConfig?.Inputs != null)
+                inputs.AddOrReplace(opConfig.Inputs);
+
+            if (opConfig?.Outputs != null)
+                outputs.AddOrReplace(opConfig.Outputs);
 
             // build explanation
             var explanation = opConfig?.Explanation ?? op?.Summary;
+
+            if (op.OperationId == "PutAssetAdministrationShellById")
+                ;
 
             // Create the table
             Table table = new Table();
@@ -258,9 +341,16 @@ namespace Yaml2Docx
             // 5th.. row: Single input parameter
             foreach (var pi in inputs)
             {
+                // infos
+                if (pi.Description.Contains("UTF"))
+                    ;
+
+                var desc = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, pi.Description);
+
+                // add
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell(pi.Name, cw[0]));
-                tr.Append(CreateCell(pi.Description, cw[1]));
+                tr.Append(CreateCell(desc ?? "", cw[1]));
                 tr.Append(CreateCell(pi.Mandatory ? "yes" : "no", cw[2]));
                 tr.Append(CreateCell(pi.Type, cw[3]));
                 tr.Append(CreateCell(pi.Card, cw[4]));
@@ -274,7 +364,7 @@ namespace Yaml2Docx
             if (op?.RequestBody?.Content != null && op?.RequestBody.Content.Count > 0)
             {
                 // try to compile appropriate information
-                var name = "requestBody";
+                var name = opConfig?.RequestBodyName ?? "requestBody";
                 var desc = op.RequestBody.Description ?? "\u2014";
                 var mand = $"{(op.RequestBody.Required ? "yes" : "no")}";
                 var type = "\u2014";
@@ -326,42 +416,6 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
-            //
-            // Response body .. treated as output
-            //
-
-            if (op?.Responses != null && op?.Responses.Count > 0)
-                foreach (var resp in op.Responses)
-                {
-                    // filter out the 200 range
-                    if (resp.Key?.StartsWith("2") != true || resp.Value == null)
-                        continue;
-
-                    // try to compile appropriate information
-                    var name = "responseBody";
-                    var desc = resp.Value.Description ?? "\u2014";
-                    var mand = "yes";
-                    var type = "\u2014";
-                    var card = "1";
-
-                    // Invisible to the reader: multiple content types/ schemas, take the first as type
-                    if (resp.Value.Content != null)
-                        foreach (var cntTup in resp.Value.Content)
-                            if (cntTup.Value?.Schema?.Ref != null)
-                            {
-                                type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
-                                break;
-                            }
-
-                    // do it
-                    TableRow tr = new TableRow();
-                    tr.Append(CreateCell($"{name}", cw[0]));
-                    tr.Append(CreateCell($"{desc}", cw[1]));
-                    tr.Append(CreateCell($"{mand}", cw[2]));
-                    tr.Append(CreateCell($"{type}", cw[3]));
-                    tr.Append(CreateCell($"{card}", cw[4]));
-                    table.Append(tr);
-                }
 
             //
             // Caption
@@ -415,16 +469,6 @@ namespace Yaml2Docx
 
             // Really appending the table
             body.Append(table);
-
-            // Notes
-            if (opConfig?.Notes != null)
-            {
-                // add notes per default at the end of the table
-                foreach (var note in opConfig.Notes)
-                    body.AppendChild(CreateParagraph(
-                        $"NOTE   {note}",
-                        styleId: $"{_config.NoteStyle}"));
-            }
 
             // empty rows
             for (int i = 0; i < _config.NumberEmptyLines; i++)
@@ -1099,6 +1143,31 @@ namespace Yaml2Docx
 
         public List<string> PatternStorage = new();
 
+        public void TryModifyEnumValues(
+            Dictionary<string, YamlConfig.EnumModification>? enumMods,
+            string schema, string attribute, List<string?> enums)
+        {
+            // access
+            if (enumMods == null)
+                return;
+
+            // search for?
+            var searchFor = $"{schema.Trim()}/{attribute.Trim()}";
+            if (!enumMods.ContainsKey(searchFor))
+                return;
+
+            // ok, modify
+            var mod = enumMods[searchFor];
+
+            if (mod.Add != null)
+                enums.AddRange(mod.Add);
+
+            if (mod.Remove != null)
+                foreach (var torem in mod.Remove)
+                    if (enums.Contains(torem))
+                        enums.Remove(torem);
+        }
+
         /// <summary>
         /// Export a single schema type information with originated property bundles 
         /// </summary>
@@ -1108,7 +1177,8 @@ namespace Yaml2Docx
             string schemaName,
             OpenApiOriginatedPropertyList oplist,
             List<string>? suppressMembers = null,
-            List<string>? schemaNotFollow = null)
+            List<string>? schemaNotFollow = null,
+            Dictionary<string, YamlConfig.EnumModification>? enumMods = null)
         {
             // access
             Body? body = mainPart.Document.Body;
@@ -1414,7 +1484,12 @@ namespace Yaml2Docx
                     {
                         var types = new List<string>();
                         types.Add("Enumeration values: ");
-                        foreach (var etxt in enumValues)
+
+                        var workEnumValues = enumValues.ToList();
+                        TryModifyEnumValues(enumMods, schemaName ?? "-", op.Name ?? "-", workEnumValues);
+                        workEnumValues.Sort();
+
+                        foreach (var etxt in workEnumValues)
                             if (etxt != null)
                                 types.Add($"\u2014 {etxt}");
                         secondText = string.Join("\n", types);

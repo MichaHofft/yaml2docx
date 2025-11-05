@@ -23,7 +23,8 @@ namespace Yaml2Docx
             List<string>? outputLines = null,
             string prefix = "",
             Dictionary<string, string>? argReplacements = null,
-            Action<string>? lambdaLog = null)
+            Action<string>? lambdaLog = null,
+            bool useShell = false)
         {
             // some placeholders
             if (argReplacements != null)
@@ -39,15 +40,15 @@ namespace Yaml2Docx
             var proc = new Process();
             proc.StartInfo.FileName = cmd;
             proc.StartInfo.Arguments = args;
-            proc.StartInfo.RedirectStandardOutput = true;
-            proc.StartInfo.RedirectStandardError = true;
-            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.RedirectStandardOutput = !useShell;
+            proc.StartInfo.RedirectStandardError = !useShell;
+            proc.StartInfo.UseShellExecute = useShell;
             proc.StartInfo.CreateNoWindow = true;
             proc.EnableRaisingEvents = true;
             proc.StartInfo.WorkingDirectory = workDir;
 
             // input
-            if (inputLines != null)
+            if (inputLines != null && !useShell)
                 proc.StartInfo.RedirectStandardInput = true;
 
             // finally start
@@ -88,10 +89,11 @@ namespace Yaml2Docx
                 Console.WriteLine(prefix + "Process exited.");
             };
 
-            // proc.Start();
-
-            proc.BeginOutputReadLine();
-            proc.BeginErrorReadLine();
+            if (!useShell)
+            {
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+            }
 
             proc.WaitForExit();
         }

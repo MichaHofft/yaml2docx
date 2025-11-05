@@ -1,0 +1,10 @@
+InterfaceOperation = OperationVerb, ModelElementName, { Modifier }, [ "By", ByQualifier ] ;
+OperationVerb = "Get" | "GetAll" | "Put" | "Post" | "Patch" | "Delete" | "Invoke" ;
+ModelElementName = ( ( "AssetAdministrationShell" | "SubmodelReference" ), ["s"] ) | "AssetInformation" | "Submodel" | ("SubmodelElement", ["s"] ) | "Operation" | "Thumbnail" ;
+Modifier = "Value" | "Sync" | "Async" | "Status" | "Result" ;
+ByQualifier = "Path" ;
+
+(*
+
+
+*)

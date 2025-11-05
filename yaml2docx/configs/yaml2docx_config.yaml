@@ -48,11 +48,36 @@ suppressSchemaNames:
 - modelType
 globalReplacements:
 - "ColumnFrom|FullMatch|RelationshipElement_abstract|RelationshipElement"
+- "Description|PartialMatch| (UTF8-BASE64-URL-encoded)|"
+- "Description|PartialMatch| Each Asset identifier is a base64-url-encoded [SpecificAssetId](https://api.swaggerhub.com/domains/Plattform_i40/Part1-MetaModel-Schemas/V3.1.1#/components/schemas/SpecificAssetId)|"
 createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
+  startWord: true
   listStyles: true
   readGrammarFiles:
+  #
+  # Grammar for AAS interface naming rules
+  #
+  - fn: .\grammar\aas-interface-naming-rules.ebnf
+    skip: true
+    listNames: true
+    actions:
+    - action: ExportGrammar
+      outputFormat: &anchorOutputFormat "console svg"
+      heading: "Grammar for rule based naming conventions of AAS interface operations"
+      body: "Table %table-ref% shows the rules, which form the different names of AAS interface operations in this standard."
+      cropBottomCm: 1
+      parts:
+      - InterfaceOperation
+      - OperationVerb
+      - ModelElementName
+      - Modifier
+      - ByQualifier
+
+  #
+  # Grammar for AAS query, access
+  #
   - fn: .\grammar\aas-grammar-iec-63278-5.ebnf
     skip: &skipReadGrammar true
     listNames: true
@@ -420,20 +445,37 @@ createWordFiles:
     useOperations: &anchorIfcOpsSM1
       GetSubmodelById:
         body: The interface operation described in Table %table-ref% allows to request for a specific Submodel based on the provided Submodel identifier. 
+        suppressInputs:
+        - level
+        - extent
+        responseBodyName: result
       PatchSubmodelById:
         body: The interface operation described in Table %table-ref% allows to update a specific Submodel identified by a Submodel identifier. 
+        suppressInputs:
+        - cursor
+        requestBodyName: value
       PutSubmodelById:
+        explanation: Replaces the Submodel
         body: The interface operation described in Table %table-ref% allows to replace a specific Submodel identified by a Submodel identifier.
+        requestBodyName: value
       DeleteSubmodelById:
         body: The interface operation described in Table %table-ref% allows to remove a specific Submodel identified by a Submodel identifier.
       GetAllSubmodelElements:
         body: The interface operation described in Table %table-ref% allows to request for a specific Submodel and its (hierarchical) elements based on a provided Submodel identifier.
+        suppressInputs:
+        - limit
+        - cursor
+        - level
+        - extent
+        responseBodyName: result
       PostSubmodelElement:
         body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the root level of the Submodel.
+        requestBodyName: value
+        responseBodyName: result
       # TODO: End file, restart with new text sections
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     skip: *skipReadOpenApi
-    listOperations: false
+    listOperations: false   
     actions:
     - action: ExportPara
       paraText: Interface operations w.r.t. adding file content
@@ -461,8 +503,11 @@ createWordFiles:
     useOperations: &anchorIfcOpsSM2
       GetFileByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS user related file representation as a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath. 
+        suppressOutputs:
+        - "Content-Disposition"
       PutFileByPath:
         body: The interface operation described in Table %table-ref% allows to set or update a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.
+        requestBodyName: file
       DeleteFileByPath:
         body: The interface operation described in Table %table-ref% allows to remove a specific AAS user related file at a specific SubmodelElement, which is identified by a provided Submodel identifier and IdShortPath and that expects a file representation.  
       # TODO: End file, restart with new text sections
@@ -493,22 +538,40 @@ createWordFiles:
     useOperations: &anchorIfcOpsSM3
       GetSubmodelElementByPath:
         body: The interface operation described in Table %table-ref% allows to request for a specific element based on a provided Submodel identifier and IdShortPath.
+        suppressInputs:
+        - level
+        - extent
+        requestBodyName: value
+        responseBodyName: result
       PostSubmodelElementByPath:
         body: The interface operation described in Table %table-ref% allows to enhance a specific Submodel with a new SubmodelElement at the provided shortId path within the Submodel.
         notes:
         - If the PostSubmodelElementByPath is executed towards a SubmodelElementList, the new SubmodelElement is added to the end of the list. 
+        requestBodyName: value
+        responseBodyName: result
       PutSubmodelElementByPath:
         body: The interface operation described in Table %table-ref% allows to replace a SubmodelElement at the provided shortId path within a specific Submodel. 
+        requestBodyName: value
+        responseBodyName: result
       PatchSubmodelElementValueByPath:
         body: The interface operation described in Table %table-ref% allows to update a SubmodelElement at the provided shortId path within a specific Submodel. 
+        suppressInputs:
+        - level
+        requestBodyName: value
       DeleteSubmodelElementByPath:
         body: The operation described in Table %table-ref% allows to delete a SubmodelElement at the provided shortId path within a specific Submodel.
       # TODO IDTA OpenAPI files: Schema of operationIds is inconsistent
       GetSubmodelElementByPath-ValueOnly:
         body: The interface operation described in Table %table-ref% allows to retrieve the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
+        suppressInputs:
+        - level
+        responseBodyName: result
       # TODO IDTA OpenAPI files: Schema of operationIds is inconsistent
       PatchSubmodelElementValueByPathValueOnly:
         body: The interface operation described in Table %table-ref% allows to update the specific value of a SubmodelElement at the provided shortId path within a specific Submodel. 
+        suppressInputs:
+        - level
+        requestBodyName: value
       # TODO: End file, restart with new text sections
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     skip: *skipReadOpenApi
@@ -543,12 +606,132 @@ createWordFiles:
     useOperations: &anchorIfcOpsSM4
       InvokeOperationSync:
         body: The interface operation described in Table %table-ref% allows to execute a syncronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
+        requestBodyName: operation
+        responseBodyName: result
       InvokeOperationAsync:
         body: The interface operation described in Table %table-ref% allows to execute an asynchronous operation represented by an Operation element at the provided shortId path within a specific Submodel. 
+        requestBodyName: operation
       GetOperationAsyncStatus:
         body: The interface operation described in Table %table-ref% allows to request the status of an executed asynchronous operation represented by an Operation element of a specific Submodel and a provided operation handler, which was provided when the asynchronous operation was called.
+        responseBodyName: result
       GetOperationAsyncResult:
         body: The interface operation describe in Table %table-ref% allows to request the result of a completed, executed asynchronous operation represented by an Operation element of a specific Submodel and provided operation handler, which was provided when the asynchronous operation was called. 
+        responseBodyName: result
+  #
+  # AAS REPO interface
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: AAS repository interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The interface operations in this section make it possible to manage multiple Asset Administration Shells in a computing environment. The set of multiple AAS within a computing environment is designated as AAS repository. The interface operations allow to retrieve multiple AAS or to update or delete AAS. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsAasRepo
+      GetAllAssetAdministrationShells:
+        explanation: Returns all Asset Administration Shells within the AAS repository.
+        body: The interface operation described in Table %table-ref% allows to request for all Asset Administration Shells within the AAS repository or to restrict the results by optional input parameters, such as specific asset identifiers or idShort attributes.
+        suppressInputs: 
+        - limit
+        - cursor
+        responseBodyName: result
+      GetAssetAdministrationShellById:
+        explanation: Returns a specific Asset Administration Shell
+        body: The interface operation described in Table %table-ref% allows to request for a specific Asset Administration Shells within the AAS repository based on the input parameter for the Identifier of the AAS.
+        responseBodyName: result
+      PostAssetAdministrationShell:
+        explanation: Creates a new Asset Administration Shell
+        body: The interface operation described in Table %table-ref% creates a new AAS within the AAS repository. The identifier of the new AAS needs to be globally unique and needs to be created beforehand this interface operation, e.g. by enumerating some identifiers within a namespace given by the organization or AAS responsible. 
+        requestBodyName: aas
+        responseBodyName: result
+      PutAssetAdministrationShellById:
+        explanation: Replaces an existing Asset Administration Shell
+        body: The interface operation described in Table %table-ref% replaces an existing AAS within the AAS repository. The AAS to be replaced is expected to have the same identifier as the AAS object, which is handed over to the interface operation.  
+        requestBodyName: aas
+        responseBodyName: result
+      DeleteAssetAdministrationShellById:
+        explanation: Deletes an Asset Administration Shell
+        body: The interface operation described in Table %table-ref% deletes an existing AAS in the AAS repository. The AAS is identified by its unique identifier.   
+        requestBodyName: aas
+        responseBodyName: result
+  #
+  # Submodel REPO interface
+  #
+  - fn: .\yamlInput\Plattform_i40-SubmodelRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: Submodel repository interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The interface operations in this section make it possible to manage multiple Submodels in a computing environment. The set of multiple Submodels within a computing environment is designated as AAS repository. The interface operations allow to retrieve multiple Submodels or to update or delete Submodels. 
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Submodel repository, which are then explained in the following subsections including details such as expected input and output parameters. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsSubmodelRepo
+      GetAllSubmodels:
+        explanation: Returns all Submodels within the Submodel repository
+        body: The interface operation described in Table %table-ref% allows to request all Submodels within the Submodel repository or to restrict the results by optional input parameters, such as semanticId or idShort attributes.
+        suppressInputs: 
+        - limit
+        - cursor
+        - level
+        - extent
+        responseBodyName: result
+      GetSubmodelById:
+        explanation: Returns a specific Submodel 
+        body: The interface operation described in Table %table-ref% allows to allows to retrieve a specific Submodel, given by its unique identifier. The status code will tell, if the Submodel exists within the Submodel repository or not. 
+        suppressInputs: 
+        - level
+        - extent
+        responseBodyName: result
+      PostSubmodel:
+        explanation: Creates a new Submodel. The identifier of the new Submodel is set in the Submodel object.  
+        body: The interface operation described in Table %table-ref% creates a new Submodel within the Submodel repository. The identifier of the new Submodel needs to be globally unique and needs to be created beforehand this interface operation, e.g. by enumerating some identifiers within a namespace given by the organization or AAS responsible. 
+        notes:
+        - "The newly created identifier needs to be specified in the Submodel object provided as input parameter to the interface operation."
+        - "This interface operation does not affect the list of Submodel references in an Asset Administration Shell. After creating a Submodel via this interface operation, a subsequent call to the PostSubmodelReference interface operation needs to be done."
+        requestBodyName: submodel
+        responseBodyName: result
+      PutSubmodelById:
+        explanation: Replaces an existing Submodel  
+        body: The interface operation described in Table %table-ref% replaces an existing Submodel within the Submodel repository. The Submodel to be replaced is expected to have the same identifier as the Submodel object, which is handed over to the interface operation..  
+        requestBodyName: submodel
+        responseBodyName: result
+      PatchSubmodelById:
+        explanation: Updates an existing Submodel   
+        body: The interface operation described in Table %table-ref% updates an existing Submodel within the Submodel repository. The Submodel to be update is expected to have the same identifier as the Submodel object, which is handed over to the interface operation.  
+        suppressInputs: 
+        - level
+        requestBodyName: submodel
+        responseBodyName: result
+      DeleteSubmodelById:
+        explanation: Deletes a Submodel
+        body: The interface operation described in Table %table-ref% deletes an existing Submodel in the Submodel repository. The Submodel is identified by its unique identifier.   
   #
   # Second pass: YAML (currently, both as Code and Table)
   #
@@ -735,9 +918,15 @@ createWordFiles:
       - AbstractLangString
       - HasDataSpecification
       - RelationshipElement_abstract
+      - StateOfEvent
       suppressMembers:
       - embeddedDataSpecifications
       - modelType
+      - category
+      enumModifications:
+        AssetInformation/assetKind:
+          add:
+          - Batch
   #
   # Fourth pass: Patterns
   # (just use one file to pass test)

@@ -456,7 +456,8 @@ namespace Yaml2Docx
                                         Console.WriteLine($"    Schema to be documented: {k} .. FOUND!");
                                         wp.ExportSinglePropertyBundle(doc, mainPart, k, pbs,
                                             suppressMembers: act.SuppressMembers,
-                                            schemaNotFollow: act.SchemaNotFollow);
+                                            schemaNotFollow: act.SchemaNotFollow,
+                                            enumMods: act.EnumModifications);
                                     }
                                     else
                                     {
@@ -485,6 +486,16 @@ namespace Yaml2Docx
                     // Finalize document
                     mainPart.Document.Save();
 
+                }
+
+                // start word
+                if (wfn.StartWord)
+                {
+                    Console.WriteLine($"    Starting Word..");
+                    ProcessLauncher.StartProcess(
+                        cmd: "cmd.exe", 
+                        args: $"/c start .\\\"{wfn.Fn}\"", 
+                        useShell: false);
                 }
             }            
         }

@@ -98,6 +98,9 @@ namespace Yaml2Docx
 
             public List<string> SuppressInputs = new();
             public List<string> SuppressOutputs = new();
+
+            public string? RequestBodyName = null;
+            public string? ResponseBodyName = null;
         }
 
         public class ExportAction
@@ -121,6 +124,11 @@ namespace Yaml2Docx
             public List<string> IncludeSchemas = new();
             public List<string> SuppressSchemas = new();
             public List<string> SuppressMembers = new();
+
+            /// <summary>
+            /// Format of key is: Schema/attribute
+            /// </summary>
+            public Dictionary<string, EnumModification> EnumModifications = new();
 
             public List<string> Parts = new();
 
@@ -178,11 +186,18 @@ namespace Yaml2Docx
             public string Fn = "TBD.docx";
             public string? UseTemplateFn;
 
+            public bool StartWord = false;
             public bool ListStyles = false;
 
             public List<ReadOpenApiFile> ReadOpenApiFiles = new();
             public List<ReadRailRoadFile> ReadRailRoadFiles = new();
             public List<ReadGrammarFile> ReadGrammarFiles = new();
+        }
+
+        public class EnumModification
+        {
+            public List<string> Add = new();
+            public List<string> Remove = new();
         }
 
         public class ExportConfig
@@ -213,10 +228,10 @@ namespace Yaml2Docx
             public double? GrammarCodeMaxHeightCm = 22.0;
 
             public string DockerBuildTextCmd = "docker";
-            public string DockerBuildTextArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e rrutf8";
+            public string DockerBuildTextArgs = "run --rm -i -v \".:/data\" homi/kgt -l iso-ebnf -e rrutf8";
 
             public string DockerBuildSvgCmd = "docker";
-            public string DockerBuildSvgArgs = "run --rm -i -v \".:/data\" kgt -l iso-ebnf -e svg";
+            public string DockerBuildSvgArgs = "run --rm -i -v \".:/data\" homi/kgt -l iso-ebnf -e svg";
 
             public string DockerSvg2BitmapCmd = "docker";
             public string DockerSvgBitmapfArgs = "run --rm -v \"%wd%:/data\" -w /data homi/librsvg --background-color=white --width=4000px -f png -o \"%out-fn%\" \"%in-fn%\"";

@@ -14,7 +14,8 @@ namespace Yaml2Docx
     {
         public enum Where { 
             Unknown     = 0x0000,
-            ColumnFrom  = 0x0001
+            ColumnFrom  = 0x0001,
+            Description = 0x0002
         }
 
         public enum How
@@ -37,6 +38,7 @@ namespace Yaml2Docx
             input = input.Trim().ToLower();
             var res = Where.Unknown;
             if (input == "columnfrom") res = res | Where.ColumnFrom;
+            if (input == "description") res = res | Where.Description;
             return res;
         }
 
@@ -100,6 +102,12 @@ namespace Yaml2Docx
                         res = it.To;
                         break;
                     }
+                }
+                else
+                if (it.How == How.PartialMatch)
+                {
+                    if (res != null && res.Contains(it.From))
+                        res = res.Replace(it.From, it.To);
                 }
             }
 
