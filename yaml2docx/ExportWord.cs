@@ -139,6 +139,46 @@ namespace Yaml2Docx
                 }
 
             //
+            // Request body .. treated as input
+            //
+
+            if (op.OperationId == "SearchAllAssetAdministrationShellIdsByAssetLink")
+                ;
+
+            if (op?.RequestBody?.Content != null && op?.RequestBody.Content.Count > 0)
+            {
+                // try to compile appropriate information
+                var pi = new YamlConfig.ParameterInfo()
+                {
+                    Name = opConfig?.RequestBodyName ?? "requestBody",
+                    Description = op.RequestBody.Description ?? "\u2014",
+                    Mandatory = op.RequestBody.Required,
+                    Type = "\u2014",
+                    Card = $"{(op.RequestBody.Required ? "1" : "0..1")}"
+                };
+
+                // Invisible to the reader: multiple content types/ schemas, take the first as type
+                foreach (var cntTup in op.RequestBody.Content)
+                {
+                    if (cntTup.Value?.Schema?.Ref != null)
+                    {
+                        pi.Type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref) ?? "";
+                        break;
+                    }
+                    if (cntTup.Value?.Schema?.Type != null)
+                    {
+                        pi.Type = cntTup.Value.Schema.Type;
+                        if (cntTup.Value.Schema.Format != null && cntTup.Value.Schema.Format.Length > 0)
+                            pi.Type += $"({cntTup.Value.Schema.Format})";
+                        break;
+                    }
+                }
+
+                // do it
+                inputs.AddOrReplace(pi);
+            }
+
+            //
             // Response body .. treated as output
             //
 
@@ -246,9 +286,6 @@ namespace Yaml2Docx
 
             // build explanation
             var explanation = opConfig?.Explanation ?? op?.Summary;
-
-            if (op.OperationId == "PutAssetAdministrationShellById")
-                ;
 
             // Create the table
             Table table = new Table();
@@ -364,37 +401,6 @@ namespace Yaml2Docx
                 tr.Append(CreateCell(pi.Mandatory ? "yes" : "no", cw[2]));
                 tr.Append(CreateCell(pi.Type, cw[3]));
                 tr.Append(CreateCell(pi.Card, cw[4]));
-                table.Append(tr);
-            }
-
-            //
-            // Request body .. treated as input
-            //
-
-            if (op?.RequestBody?.Content != null && op?.RequestBody.Content.Count > 0)
-            {
-                // try to compile appropriate information
-                var name = opConfig?.RequestBodyName ?? "requestBody";
-                var desc = op.RequestBody.Description ?? "\u2014";
-                var mand = $"{(op.RequestBody.Required ? "yes" : "no")}";
-                var type = "\u2014";
-                var card = $"{(op.RequestBody.Required ? "1" : "0..1")}";
-
-                // Invisible to the reader: multiple content types/ schemas, take the first as type
-                foreach (var cntTup in op.RequestBody.Content)
-                    if (cntTup.Value?.Schema?.Ref != null)
-                    {
-                        type = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
-                        break;
-                    }
-
-                // do it
-                TableRow tr = new TableRow();
-                tr.Append(CreateCell($"{name}", cw[0]));
-                tr.Append(CreateCell($"{desc}", cw[1]));
-                tr.Append(CreateCell($"{mand}", cw[2]));
-                tr.Append(CreateCell($"{type}", cw[3]));
-                tr.Append(CreateCell($"{card}", cw[4]));
                 table.Append(tr);
             }
 

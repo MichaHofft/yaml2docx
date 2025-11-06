@@ -360,6 +360,8 @@ namespace Yaml2Docx
             public string? Summary;
             public string? OperationId;
 
+            public bool? Deprecated;
+
             public List<string> Tags = new();
             
             [YamlMember(Alias = "x-semanticIds", ApplyNamingConventions = false)]

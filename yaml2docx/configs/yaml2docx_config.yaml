@@ -50,6 +50,8 @@ globalReplacements:
 - "ColumnFrom|FullMatch|RelationshipElement_abstract|RelationshipElement"
 - "Description|PartialMatch| (UTF8-BASE64-URL-encoded)|"
 - "Description|PartialMatch| Each Asset identifier is a base64-url-encoded [SpecificAssetId](https://api.swaggerhub.com/domains/Plattform_i40/Part1-MetaModel-Schemas/V3.1.1#/components/schemas/SpecificAssetId)|"
+# for: SearchAllAssetAdministrationShellIdsByAssetLink
+- "Description|PartialMatch|A list of specific asset identifiers. Search for the global asset ID is supported by setting \"name\"  to \"globalAssetId\" (see Constraint AASd-116).|A list of asset identifiers."
 createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
@@ -834,6 +836,57 @@ createWordFiles:
       DeleteSubmodelDescriptorById:
         explanation: Deletes an existing Submodel descriptor
         body: The interface operation described in Table %table-ref% deletes an existing Submodel descriptor in the Submodel registry.
+  #
+  # AAS DISCOVERY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-DiscoveryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: &skipReadOpenApi false
+    listOperations: false
+    actions:
+    - action: ExportPara
+      paraText: AAS discovery interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: General
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The interface operations in this section make it possible to relate an asset identifier to an AAS identifier. The format of the tables in this section are described in Annex A.
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: EXAMPLE   An asset identifier is given by an 2D code as IEC 61406 identifier placed on the physical nameplate of a automation component. The asset identifier is scanned and the discovery interface automatically determines the correct Asset Administration Shell within the engineering systems of the company.
+      paraStyle: EXAMPLE
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportTables
+    useOperations: &anchorIfcOpsAasRepo
+      SearchAllAssetAdministrationShellIdsByAssetLink:
+        body: The interface operation described in Table %table-ref% allows to request for one or multiple asset identifiers the corresponding AAS identifiers.
+        suppressInputs: 
+        - limit
+        - cursor
+        requestBodyName: assetIdentifiers
+        responseBodyName: result
+        suppressOutputs:
+        - responseBody
+        outputs:
+        - all: result|A list of AAS identifiers|false|array|0..1
+      GetAllAssetLinksById:
+        explanation: Returns a list of specific asset identifiers based on an Asset Administration Shell ID to edit discoverable content. The global asset ID is returned as specific asset ID with "name" equal to "globalAssetId".
+        body: The interface operation described in Table %table-ref% allows to request for one or multiple asset identifiers the corresponding AAS identifiers.
+        responseBodyName: result
+      PostAllAssetLinksById:
+        body: The interface operation described in Table %table-ref% allows to create or replace all asset links associated to the specified Asset Administration Shell.
+        requestBodyName: assetIdentifiers
+        responseBodyName: result
+      DeleteAllAssetLinksById:
+        body: The interface operation described in Table %table-ref% allows to delete all asset links associated to the specified Asset Administration Shell.
+        requestBodyName: assetIdentifiers
+        responseBodyName: result
   #
   # Second pass: YAML (currently, both as Code and Table)
   #
