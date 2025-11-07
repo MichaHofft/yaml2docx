@@ -286,6 +286,7 @@ namespace Yaml2Docx
 
             // build explanation
             var explanation = opConfig?.Explanation ?? op?.Summary;
+            explanation = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, explanation);
 
             // Create the table
             Table table = new Table();
@@ -392,14 +393,16 @@ namespace Yaml2Docx
                 if (pi.Description.Contains("UTF"))
                     ;
 
+                // some info
                 var desc = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, pi.Description);
+                var type = _config.Reps.CheckReplace(GlobalReplacements.Where.TypeSchema, pi.Type);
 
                 // add
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell(pi.Name, cw[0]));
                 tr.Append(CreateCell(desc ?? "", cw[1]));
                 tr.Append(CreateCell(pi.Mandatory ? "yes" : "no", cw[2]));
-                tr.Append(CreateCell(pi.Type, cw[3]));
+                tr.Append(CreateCell(type, cw[3]));
                 tr.Append(CreateCell(pi.Card, cw[4]));
                 table.Append(tr);
             }
@@ -420,12 +423,18 @@ namespace Yaml2Docx
                 table.Append(tr);
             }
 
+            if (op.OperationId == "GetAllSubmodelReferences")
+                ;
+
             // 7th.. row: Single output parameter
             foreach (var pi in outputs)
             {
+                // some info
+                var desc = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, pi.Description);
+
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell(pi.Name, cw[0]));
-                tr.Append(CreateCell(pi.Description, cw[1]));
+                tr.Append(CreateCell(desc, cw[1]));
                 tr.Append(CreateCell(pi.Mandatory ? "yes" : "no", cw[2]));
                 tr.Append(CreateCell(pi.Type, cw[3]));
                 tr.Append(CreateCell(pi.Card, cw[4]));
@@ -551,6 +560,8 @@ namespace Yaml2Docx
             foreach (var opT in opTuples)
             {
                 var explanation = opT.Config.Explanation ?? opT.Operation.Summary;
+                explanation = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, explanation);
+
                 TableRow tr = new TableRow();
                 tr.Append(CreateCell($"{opT.Operation.OperationId}", cw[0]));
                 tr.Append(CreateCell($"{explanation}", cw[1]));
@@ -732,6 +743,21 @@ namespace Yaml2Docx
 
             // build lines
             var lines = yaml.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (op.OperationId == "PutThumbnail")
+                ;
+
+            // replace types/ schemas in lines (quite a deal)
+            for (int i = 0; i < lines.Count(); i++)
+            {
+                var match = Regex.Match(lines[i], @"^(.*?)(#/components/schemas/)([^']+)('.*)$");
+                if (match.Success && match.Groups.Count >= 5)
+                    lines[i] = string.Format("{0}{1}{2}{3}",
+                        match.Groups[1].ToString(),
+                        match.Groups[2].ToString(),
+                        _config.Reps.CheckReplace(GlobalReplacements.Where.TypeSchema, match.Groups[3].ToString()),
+                        match.Groups[4].ToString());
+            }
 
             // Heading
             body.AppendChild(CreateParagraph(
@@ -1201,16 +1227,19 @@ namespace Yaml2Docx
             if (body == null)
                 return;
 
+            // schemaName, replaced
+            var schemaNameRepl = _config.Reps.CheckReplace(GlobalReplacements.Where.TypeSchema, schemaName) ?? "";
+
             // generate a table-reference
             var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
             var substs = (new[] { 
                 substTablRef, 
-                new Substitution("schema", schemaName, false) } 
+                new Substitution("schema", schemaNameRepl, false) } 
             ).ToList();
 
             // Heading
             body.AppendChild(CreateParagraph(
-                $"{_config.SchemaHeadingPrefix} {schemaName}",
+                $"{_config.SchemaHeadingPrefix} {schemaNameRepl}",
                 styleId: $"{_config.TableHeadingStyle}"));
 
             // Intro text
@@ -1453,6 +1482,7 @@ namespace Yaml2Docx
 
                 // do some global replacements
                 from = _config.Reps.CheckReplace(GlobalReplacements.Where.ColumnFrom, from);
+                from = _config.Reps.CheckReplace(GlobalReplacements.Where.TypeSchema, from);
 
                 // skip the "top" dividing line to above "from"?
                 var skipDividingLine = false;
@@ -1621,7 +1651,7 @@ namespace Yaml2Docx
                     new BookmarkEnd() { Id = "0" },
 
                     // separator and caption text
-                    new Run(new Text($" – {_config.SchemaTableCaptionPrefix} {schemaName}")
+                    new Run(new Text($" – {_config.SchemaTableCaptionPrefix} {schemaNameRepl}")
                     {
                         Space = SpaceProcessingModeValues.Preserve
                     })
@@ -1821,6 +1851,7 @@ namespace Yaml2Docx
 
             // build explanation
             var explanation = opConfig?.Explanation ?? op?.Summary;
+            explanation = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, explanation);
 
             // need a lambda for filling up responses, later
             Func<OpenApiResponse, Tuple<OpenApiResponse, string?>> lambdaCreateDereferencedWorkResponse = (resp) =>
@@ -1961,10 +1992,12 @@ namespace Yaml2Docx
                     // 1st row is always Name + Description + Description value
                     if (true)
                     {
+                        var desc = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, para.Description);
+
                         TableRow tr = new TableRow();
                         tr.Append(CreateCell($"{para.Name}", cw[0], bold: true, verticalMerge: true, verticalMergeRestart: true));
                         tr.Append(CreateMergedCell("Description", false, cw[1]));
-                        tr.Append(CreateMergedCell($"{para.Description}", true, cw[2]));
+                        tr.Append(CreateMergedCell($"{desc}", true, cw[2]));
                         tr.Append(CreateMergedCell("", false, cw[3]));
                         tr.Append(CreateMergedCell("", false, cw[4]));
                         table.Append(tr);
@@ -2004,9 +2037,11 @@ namespace Yaml2Docx
                 // Description
                 if (true)
                 {
+                    var desc = _config.Reps.CheckReplace(GlobalReplacements.Where.Description, op.RequestBody.Description);
+
                     TableRow tr = new TableRow();
                     tr.Append(CreateCell("Description", cw[0]));
-                    tr.Append(CreateMergedCell($"{op.RequestBody.Description}", true, cw[1], bold: true));
+                    tr.Append(CreateMergedCell($"{desc}", true, cw[1], bold: true));
                     tr.Append(CreateMergedCell("", false, cw[2]));
                     tr.Append(CreateMergedCell("", false, cw[3]));
                     tr.Append(CreateMergedCell("", false, cw[4]));
@@ -2047,6 +2082,7 @@ namespace Yaml2Docx
                     if (cntTup.Value.Schema?.Ref != null)
                     {
                         var schema = YamlOpenApi.StripSchemaHead(cntTup.Value.Schema.Ref);
+                        schema = _config.Reps.CheckReplace(GlobalReplacements.Where.TypeSchema, schema);
 
                         TableRow tr = new TableRow();
                         tr.Append(CreateCell("Schema", cw[0]));
@@ -2101,7 +2137,7 @@ namespace Yaml2Docx
                     if (workResp.Item1.Description != null)
                     {
                         RefOrDescKey = "Description";
-                        RefOrDescVal = "" + workResp.Item1.Description;
+                        RefOrDescVal = "" + _config.Reps.CheckReplace(GlobalReplacements.Where.Description, workResp.Item1.Description);
                     }
                     else
                     if (workResp.Item2 != null)

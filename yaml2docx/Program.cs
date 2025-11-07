@@ -11,7 +11,6 @@ namespace Yaml2Docx
 {
     public class Program
     {
-
         static void Main(string[] args)
         {
             // Welcome
@@ -436,9 +435,10 @@ namespace Yaml2Docx
                                 schemaList.Sort();
 
                                 // remove if on suppressList
-                                foreach (var sch in act.SuppressSchemas)
-                                    if (schemaList.Contains(sch))
-                                        schemaList.Remove(sch);
+                                if (act.SuppressSchemas != null)
+                                    foreach (var sch in act.SuppressSchemas)
+                                        if (schemaList.Contains(sch))
+                                            schemaList.Remove(sch);
 
                                 // visit them
                                 foreach (var k in schemaList)

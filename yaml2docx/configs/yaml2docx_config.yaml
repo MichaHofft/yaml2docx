@@ -52,6 +52,12 @@ globalReplacements:
 - "Description|PartialMatch| Each Asset identifier is a base64-url-encoded [SpecificAssetId](https://api.swaggerhub.com/domains/Plattform_i40/Part1-MetaModel-Schemas/V3.1.1#/components/schemas/SpecificAssetId)|"
 # for: SearchAllAssetAdministrationShellIdsByAssetLink
 - "Description|PartialMatch|A list of specific asset identifiers. Search for the global asset ID is supported by setting \"name\"  to \"globalAssetId\" (see Constraint AASd-116).|A list of asset identifiers."
+# cleaner type names
+- "TypeSchema|FullMatch|assetinformation_thumbnail_body|AssetInformationThumbnailBody"
+- "TypeSchema|FullMatch|idShortPath_attachment_body|IdShortPathAttachmentBody"
+# pretty global replacements
+- "Description|Regex|(\\W)submodel(s||)(\\W[^e])|$1Submodel$2$3"
+- "Description|Regex|(\\W)submodel element(s||)(\\W||$)|$1SubmodelElement$2$3"
 createWordFiles:
 - fn: Output_for_IEC63278-5.docx
   useTemplateFn: .\templates\IEC_template.docx
@@ -336,12 +342,10 @@ createWordFiles:
       GetAssetAdministrationShell:
         body: The interface operation described in Table %table-ref% allows to request for a specific AAS based on the provided AAS identifier.
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         responseBodyName: result
       PutAssetAdministrationShell:
         body: The interface operation described in Table %table-ref% allows to replace/ update a complete specific AAS.
-        inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
         requestBodyName: aas
         responseBodyName: result
       GetAllSubmodelReferences:
@@ -354,14 +358,14 @@ createWordFiles:
         - limit
         - cursor
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         responseBodyName: result
       PostSubmodelReference:
         body: The interface operation described in Table %table-ref% enhances the list of Submodel references of an associated AAS by a new provided Submodel reference.  
         # TODO IDTA OpenAPI files: Submodel with capital first letter
         explanation: Creates a Submodel reference at the Asset Administration Shell
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         requestBodyName: submodelRef
         responseBodyName: result
       DeleteSubmodelReference:
@@ -374,21 +378,21 @@ createWordFiles:
         - limit
         - cursor
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         requestBodyName: submodelRef
       GetAssetInformation:
         body: The interface operation described in Table %table-ref% returns related asset information of an associated AAS. 
         # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
         explanation: Returns the asset information
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         responseBodyName: result
       PutAssetInformation:
         body: The interface operation described in Table %table-ref% allows to set or update asset-based information of an associated AAS. 
         # TODO IDTA OpenAPI files: Asset Information with lower-case first letters
         explanation: Updates the asset information
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         requestBodyName: assetInfo
       GetThumbnail:
         body: The interface operation described in Table %table-ref% allows to request for a thumbnail file of an associated AAS.
@@ -397,21 +401,21 @@ createWordFiles:
         notes:
         - Thumbnail refers to a reduced size image of the asset (see IEC 63278-2). 
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         responseBodyName: result
       PutThumbnail:
         body: The interface operation described in Table %table-ref% allows to set or update a thumbnail file of an associated AAS. 
         # TODO IDTA OpenAPI files: No Text!
         explanation: Replaces the thumbnail file of an associated AAS.
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
         requestBodyName: file
       DeleteThumbnail:
         body: The interface operation described in Table %table-ref% allows to remove a thumbnail file of an associated AAS.
         # TODO IDTA OpenAPI files: No Text!
         explanation: Deletes the thumbnail file of an associated AAS.
         inputs:
-        - all: aasId|AssetAdministrationShell identifier|true|AssetAdministrationShellID|1 
+        - all: aasIdentifier|AssetAdministrationShell identifier|true|string|1 
   #
   # Submodel interface
   #
@@ -453,10 +457,14 @@ createWordFiles:
         body: The interface operation described in Table %table-ref% allows to update a specific Submodel identified by a Submodel identifier. 
         suppressInputs:
         - cursor
+        - level
         requestBodyName: value
       PutSubmodelById:
         explanation: Replaces the Submodel
         body: The interface operation described in Table %table-ref% allows to replace a specific Submodel identified by a Submodel identifier.
+        suppressInputs:
+        - cursor
+        - level
         requestBodyName: value
       DeleteSubmodelById:
         body: The interface operation described in Table %table-ref% allows to remove a specific Submodel identified by a Submodel identifier.
@@ -651,7 +659,7 @@ createWordFiles:
         responseBodyName: result
       GetAssetAdministrationShellById:
         explanation: Returns a specific Asset Administration Shell
-        body: The interface operation described in Table %table-ref% allows to request for a specific Asset Administration Shells within the AAS repository based on the input parameter for the Identifier of the AAS.
+        body: The interface operation described in Table %table-ref% allows to request for a specific Asset Administration Shells within the AAS repository based on the input parameter for the identifier of the AAS.
         responseBodyName: result
       PostAssetAdministrationShell:
         explanation: Creates a new Asset Administration Shell
@@ -756,7 +764,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations: &anchorIfcOpsAasRepo
+    useOperations: &anchorIfcOpsAasReg
       GetAllAssetAdministrationShellDescriptors:
         explanation: Returns specific AAS descriptions within the AAS registry.
         body: The interface operation described in Table %table-ref% allows to request for all AAS descriptors within the AAS registry or to restrict the results by optional input parameters, such as specific asset kind or asset type attributes.
@@ -808,7 +816,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations: &anchorIfcOpsAasRepo
+    useOperations: &anchorIfcOpsSubmodelReg
       GetAllSubmodelDescriptors:
         explanation: Returns all Submodel descriptors within the Submodel registry.
         body: The interface operation described in Table %table-ref% allows to request for all Submodel descriptors within the Submodel registry.
@@ -863,7 +871,7 @@ createWordFiles:
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportTables
-    useOperations: &anchorIfcOpsAasRepo
+    useOperations: &anchorIfcOpsAasDisc
       SearchAllAssetAdministrationShellIdsByAssetLink:
         body: The interface operation described in Table %table-ref% allows to request for one or multiple asset identifiers the corresponding AAS identifiers.
         suppressInputs: 
@@ -911,6 +919,9 @@ createWordFiles:
     - action: ExportPara
       paraText: For further details on the interfaces see [3] and [4].
       paraStyle: Normal
+    - action: ExportPara
+      paraText: NOTE   While the technology neutral definitions of the interface operation feature an AAS identifier as input parameter, in the HTTP API, this is given already by the ressource path when accessing the AAS administration interface. 
+      paraStyle: NOTE
     - action: ExportPara
       paraText: NOTE   In known implementations, parameters for “Limit” and “Cursor” enable pagination of results and parameters for “Level” and “Extend” control extended possibilities towards depth of information. For interoperability, these parameters are not in the mapping. 
       paraStyle: NOTE
@@ -1018,7 +1029,120 @@ createWordFiles:
       yamlAsTable: true
     useOperations: *anchorIfcOpsSM4
   #
+  # AAS REPO interface
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: AAS repository interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all AAS repository interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsAasRepo      
+  #
+  # Submodel REPO interface
+  #
+  - fn: .\yamlInput\Plattform_i40-SubmodelRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel repository interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel repository interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSubmodelRepo      
+  #
+  # AAS REGISTRY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRegistryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: AAS registry interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all AAS registry interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsAasReg      
+  #
+  # Submodel REGISTRY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-SubmodelRegistryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: Submodel registry interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all Submodel registry interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsSubmodelReg      
+  #
+  # AAS DISCOVERY interface
+  #
+  - fn: .\yamlInput\Plattform_i40-DiscoveryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    listOperations: false
+    actions:
+    # Start of: Extra header for chapter
+    - action: ExportPara
+      paraText: AAS discovery interface and interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: Table %table-ref% gives an overview of all AAS discovery interface and interface operations. 
+      paraStyle: Normal
+    - action: ExportOverview
+    - action: ExportYaml
+      yamlAsSource: true
+      yamlAsTable: true
+    useOperations: *anchorIfcOpsAasDisc      
+  #
   # Third pass: Schemas = Data types
+  #
+  #
+  # AAS + AAS Repo
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     skip: *skipReadOpenApi
@@ -1026,6 +1150,9 @@ createWordFiles:
     - action: ExportPara
       paraText: Serialization of data types for interface operations
       paraStyle: berschrift2
+    - action: ExportPara
+      paraText: Overview
+      paraStyle: berschrift3
     - action: ExportPara
       paraText: The following sub sections depict the serialization of specific data types required as input and output data of interface operations. In particular, the serialization into JSON data interchange syntax (ISO/ IEC 21778:2017) is targeted.
       paraStyle: Normal
@@ -1050,6 +1177,18 @@ createWordFiles:
     - action: ExportPara
       paraText: "Further specification: Specifies further requirements, such as string patterns or minimum or maximum string lengths or string enumeration values. For string pattern specification, the requirements from sub section for indexed string pattern definitions apply. "
       paraStyle: ListDash
+    - action: ExportPara
+      paraText: Data types for AAS administration and Submodel interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: "The following sub sections depict the serialization of specific data types of the interface operations for:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: AAS administration interface
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: Submodel interface
+      paraStyle: ListDash
     - action: ExportSchema
       includeSchemas: 
       - AssetAdministrationShell
@@ -1060,6 +1199,15 @@ createWordFiles:
       - SubmodelElement
       # for HTTP operations
       - Result
+      - OperationRequest
+      - OperationResult
+      # for files
+      - assetinformation_thumbnail_body
+      - idShortPath_attachment_body
+      # for different AAS interfaces
+      - GetReferencesResult
+      - GetSubmodelElementsResult
+      - SubmodelElementValue      
       suppressSchemas: &suppressSchemaList
       - DataTypeDefXsd
       - Direction
@@ -1074,6 +1222,8 @@ createWordFiles:
       - HasDataSpecification
       - RelationshipElement_abstract
       - StateOfEvent
+      - AssetKind
+      - Descriptor
       suppressMembers:
       - embeddedDataSpecifications
       - modelType
@@ -1082,6 +1232,75 @@ createWordFiles:
         AssetInformation/assetKind:
           add:
           - Batch
+  #
+  # AAS REPO
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    actions:
+    - action: ExportPara
+      paraText: Data types for AAS repository interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: AAS repository interface
+      paraStyle: ListDash
+    - action: ExportSchema
+      skipIfVisited: true
+      includeSchemas: 
+      - GetAssetAdministrationShellsResult
+      suppressSchemas: *suppressSchemaList
+      suppressMembers:
+  #
+  # Submodel REPO
+  #
+  - fn: .\yamlInput\Plattform_i40-SubmodelRepositoryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    actions:
+    - action: ExportPara
+      paraText: Data types for Submodel repository interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: Submodel repository interface
+      paraStyle: ListDash
+    - action: ExportSchema
+      skipIfVisited: true
+      includeSchemas: 
+      - GetSubmodelsResult
+      suppressSchemas: *suppressSchemaList
+      suppressMembers:
+  #
+  # AAS Regi + Submodel regi
+  #
+  - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellRegistryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    actions:
+    - action: ExportPara
+      paraText: Data types for AAS and Submodel registry interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: AAS registry interface
+      paraStyle: ListDash
+    - action: ExportPara
+      paraText: Submodel registry interface
+      paraStyle: ListDash
+    - action: ExportSchema
+      skipIfVisited: true
+      includeSchemas: 
+      - AssetAdministrationShellDescriptor
+      - SubmodelDescriptor
+      - GetAssetAdministrationShellDescriptorsResult
+      - GetSubmodelDescriptorsResult
+      suppressSchemas: *suppressSchemaList
+      suppressMembers:
   #
   # Fourth pass: Patterns
   # (just use one file to pass test)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Yaml2Docx
@@ -15,7 +16,8 @@ namespace Yaml2Docx
         public enum Where { 
             Unknown     = 0x0000,
             ColumnFrom  = 0x0001,
-            Description = 0x0002
+            Description = 0x0002,
+            TypeSchema  = 0x0004
         }
 
         public enum How
@@ -39,6 +41,7 @@ namespace Yaml2Docx
             var res = Where.Unknown;
             if (input == "columnfrom") res = res | Where.ColumnFrom;
             if (input == "description") res = res | Where.Description;
+            if (input == "typeschema") res = res | Where.TypeSchema;
             return res;
         }
 
@@ -59,7 +62,15 @@ namespace Yaml2Docx
             foreach (var line in input)
             {
                 // use "|" as seperator (unlikely to find it in names)
-                var parts = line.Split('|');
+                // Split on '|' that is NOT part of a '||'
+                var parts = Regex.Split(line, @"(?<!\|)\|(?!\|)");
+
+                // Replace double '||' with a single '|' (if you want to unescape them)
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    parts[i] = parts[i].Replace("||", "|");
+                }
+
                 if (parts.Length != 4)
                 {
                     res--;
@@ -67,14 +78,14 @@ namespace Yaml2Docx
                 }
 
                 // good to go
-                var i = new Item()
+                var it = new Item()
                 {
                     Where = ParseWhere(parts[0]),
                     How = ParseHow(parts[1]),
                     From = parts[2],
                     To = parts[3]
                 };
-                _items.Add(i);
+                _items.Add(it);
                 res++;
             }
             return res;
@@ -103,11 +114,16 @@ namespace Yaml2Docx
                         break;
                     }
                 }
-                else
-                if (it.How == How.PartialMatch)
+                else if (it.How == How.PartialMatch)
                 {
                     if (res != null && res.Contains(it.From))
                         res = res.Replace(it.From, it.To);
+                }
+                else if (it.How == How.Regex && res != null)
+                {
+                    var rep = Regex.Replace(res, it.From, it.To, RegexOptions.Singleline);
+                    if (!rep.Equals(res))
+                        res = rep;
                 }
             }
 
