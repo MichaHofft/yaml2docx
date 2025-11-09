@@ -2269,7 +2269,7 @@ namespace Yaml2Docx
                     new BookmarkEnd() { Id = "0" },
 
                     // separator and caption text
-                    new Run(new Text($" – {_config.SchemaTableCaptionPrefix} {op?.OperationId}")
+                    new Run(new Text($" – {_config.HttpTableCaptionPrefix} {op?.OperationId}")
                     {
                         Space = SpaceProcessingModeValues.Preserve
                     })

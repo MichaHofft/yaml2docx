@@ -1,11 +1,12 @@
 tableHeadingPrefix: Interface operation 
 schemaHeadingPrefix: Data type of
+httpTableCaptionPrefix: HTTP API for interface operation
 schemaTableCaptionPrefix: Overview on data type
 schemaBody: Table %table-ref% provides an overview of the data type %schema% for the mapping to serialization.
 tableHeadingStyle: berschrift4
 noteStyle: NOTE
 tableCaptionStyle: TABLE-title
-yamlHeadingStyle: berschrift3
+yamlHeadingStyle: berschrift4
 yamlCodeStyle: YamlMono
 grammarHeadingStyle: berschrift4
 grammarCodeStyle: SourceCode
@@ -55,6 +56,7 @@ globalReplacements:
 # cleaner type names
 - "TypeSchema|FullMatch|assetinformation_thumbnail_body|AssetInformationThumbnailBody"
 - "TypeSchema|FullMatch|idShortPath_attachment_body|IdShortPathAttachmentBody"
+- "TypeSchema|FullMatch|inline_response_200|InlineResponse200"
 # pretty global replacements
 - "Description|Regex|(\\W)submodel(s||)(\\W[^e])|$1Submodel$2$3"
 - "Description|Regex|(\\W)submodel element(s||)(\\W||$)|$1SubmodelElement$2$3"
@@ -439,20 +441,17 @@ createWordFiles:
       paraText: These interface operations make it possible to access the elements of Submodels, which are each an Identifiable entity. The format of the tables in this section are described in Annex A.
       paraStyle: Normal
     - action: ExportPara
-      paraText: Interface operations w.r.t. to overall Submodel structure
+      paraText: Overview on interface operations w.r.t. to overall Submodel structure
       paraStyle: berschrift3
     - action: ExportPara
       paraText: These interface operations make it possible to access Submodels as a whole, not targeting specific SubmodelElements. The format of the tables in this section are described in Annex A.
       paraStyle: Normal
     - action: ExportPara
-      paraText: Overview
-      paraStyle: berschrift4
-    - action: ExportPara
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportPara
-      paraText: Detailed interface operations
+      paraText: Detailed interface operations w.r.t. to overall Submodel structure
       paraStyle: berschrift3
     - action: ExportPara
       paraText: The following sub sections provide the details for the interface operations in this section.  
@@ -498,11 +497,8 @@ createWordFiles:
     listOperations: false   
     actions:
     - action: ExportPara
-      paraText: Interface operations w.r.t. adding file content
+      paraText: Overview on interface operations w.r.t. adding file content
       paraStyle: berschrift3
-    - action: ExportPara
-      paraText: General
-      paraStyle: berschrift4
     - action: ExportPara
       paraText: SubmodelElements of subclass File allow adding information, which is represented by separate file content and is of purpose information (see IEC 63278-2). AAS user applications access these contents.
       paraStyle: Normal
@@ -513,14 +509,11 @@ createWordFiles:
       paraText: The interface operations in this subsection concern about the storage and retrieval of such file content with respect to File elements within a Submodel.
       paraStyle: Normal
     - action: ExportPara
-      paraText: Overview
-      paraStyle: berschrift4
-    - action: ExportPara
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportPara
-      paraText: Detailed interface operations
+      paraText: Detailed interface operations w.r.t. adding file content
       paraStyle: berschrift3
     - action: ExportPara
       paraText: The following sub sections provide the details for the interface operations in this section.  
@@ -542,11 +535,8 @@ createWordFiles:
     listOperations: false
     actions:
     - action: ExportPara
-      paraText: Interface operations w.r.t. nested SubmodelElements
+      paraText: Overview on interface operations w.r.t. nested SubmodelElements
       paraStyle: berschrift3
-    - action: ExportPara
-      paraText: General
-      paraStyle: berschrift4
     - action: ExportPara
       paraText: Within a Submodel, SubmodelElements are hierarchically structure, e.g. by the use of SubmodelElementCollection (see IEC 63278-2). The interface operations in this subsection concern about accessing such SubmodelElements. To specifically address such SubmodelElements, a reference to the Submodel is given together with a list of IdShort identifiers, which one after the other denote the path from the Submodel to the subordinate SubmodelElements. This list of IdShort identifiers is named IdShortPath. 
       paraStyle: Normal
@@ -554,14 +544,11 @@ createWordFiles:
       paraText: EXAMPLE   See IEC 63278-2 for examples on references. For the reference “(Submodel)https://example.com/aas/1/1/1234859590, (SubmodelElementList)Documents, (SubmodelElementCollection)0, (MultiLanguageProperty)Title”, the IdShortPath is “Documents.0.Title”.
       paraStyle: EXAMPLE
     - action: ExportPara
-      paraText: Overview
-      paraStyle: berschrift4
-    - action: ExportPara
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportPara
-      paraText: Detailed interface operations
+      paraText: Detailed interface operations w.r.t. nested SubmodelElements
       paraStyle: berschrift3
     - action: ExportPara
       paraText: The following sub sections provide the details for the interface operations in this section.  
@@ -610,11 +597,8 @@ createWordFiles:
     listOperations: false
     actions:
     - action: ExportPara
-      paraText: Interface operations w.r.t. Operation elements
+      paraText: Overview on interface operations w.r.t. Operation elements
       paraStyle: berschrift3
-    - action: ExportPara
-      paraText: General
-      paraStyle: berschrift4
     - action: ExportPara
       paraText: This subsection concerns about Operation elements, which are a subtype of SubmodelElement and represented within an Submodel. For such Operation elements, the start of synchronous and asynchronous operations is possible. For asynchronous operations, dedicated interface operations for retrieval of status and results are described.
       paraStyle: Normal
@@ -628,14 +612,11 @@ createWordFiles:
       paraText: NOTE 3  Asynchronous operations are executed out of time coincidence with its completion; instead of an result, an handle to retrieve status and results are returned. 
       paraStyle: NOTE
     - action: ExportPara
-      paraText: Overview
-      paraStyle: berschrift4
-    - action: ExportPara
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
     - action: ExportPara
-      paraText: Detailed interface operations
+      paraText: Detailed interface operations w.r.t. Operation elements
       paraStyle: berschrift3
     - action: ExportPara
       paraText: The following sub sections provide the details for the interface operations in this section.  
@@ -996,6 +977,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all AAS administration interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1018,6 +1002,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. to overall Submodel structure. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1040,6 +1027,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. adding file content. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1062,6 +1052,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. nested SubmodelElements. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1084,6 +1077,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel interface and interface operations w.r.t. Operation elements. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1106,6 +1102,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all AAS repository interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1128,6 +1127,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel repository interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1150,6 +1152,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all AAS registry interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1172,6 +1177,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all Submodel registry interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1194,6 +1202,9 @@ createWordFiles:
       paraText: Table %table-ref% gives an overview of all AAS discovery interface and interface operations. 
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed HTTP APIs
+      paraStyle: berschrift3
     - action: ExportYaml
       yamlAsSource: true
       yamlAsTable: true
@@ -1202,17 +1213,17 @@ createWordFiles:
   # Third pass: Schemas = Data types
   #
   #
-  # AAS + AAS Repo
+  # AAS
   #
   - fn: .\yamlInput\Plattform_i40-AssetAdministrationShellServiceSpecification-V3.1.1_SSP-001-resolved.yaml
     skip: *skipReadOpenApi
     actions:
     - action: ExportPara
       paraText: Serialization of data types for interface operations
-      paraStyle: berschrift2
+      paraStyle: berschrift1
     - action: ExportPara
       paraText: Overview
-      paraStyle: berschrift3
+      paraStyle: berschrift2
     - action: ExportPara
       paraText: The following sub sections depict the serialization of specific data types required as input and output data of interface operations. In particular, the serialization into JSON data interchange syntax (ISO/ IEC 21778:2017) is targeted.
       paraStyle: Normal
@@ -1239,7 +1250,7 @@ createWordFiles:
       paraStyle: ListDash
     - action: ExportPara
       paraText: Data types for AAS administration and Submodel interface operations
-      paraStyle: berschrift3
+      paraStyle: berschrift2
     - action: ExportPara
       paraText: "The following sub sections depict the serialization of specific data types of the interface operations for:"
       paraStyle: Normal
@@ -1300,7 +1311,7 @@ createWordFiles:
     actions:
     - action: ExportPara
       paraText: Data types for AAS repository interface operations
-      paraStyle: berschrift3
+      paraStyle: berschrift2
     - action: ExportPara
       paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
       paraStyle: Normal
@@ -1321,7 +1332,7 @@ createWordFiles:
     actions:
     - action: ExportPara
       paraText: Data types for Submodel repository interface operations
-      paraStyle: berschrift3
+      paraStyle: berschrift2
     - action: ExportPara
       paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
       paraStyle: Normal
@@ -1342,7 +1353,7 @@ createWordFiles:
     actions:
     - action: ExportPara
       paraText: Data types for AAS and Submodel registry interface operations
-      paraStyle: berschrift3
+      paraStyle: berschrift2
     - action: ExportPara
       paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
       paraStyle: Normal
@@ -1359,6 +1370,28 @@ createWordFiles:
       - SubmodelDescriptor
       - GetAssetAdministrationShellDescriptorsResult
       - GetSubmodelDescriptorsResult
+      suppressSchemas: *suppressSchemaList
+      suppressMembers:
+  #
+  # AAS Discovery
+  #
+  - fn: .\yamlInput\Plattform_i40-DiscoveryServiceSpecification-V3.1.1_SSP-001-resolved.yaml
+    skip: *skipReadOpenApi
+    actions:
+    - action: ExportPara
+      paraText: Data types for AAS discovery interface operations
+      paraStyle: berschrift2
+    - action: ExportPara
+      paraText: "The following sub sections depict the serialization of specific additional data types of the interface operations for:"
+      paraStyle: Normal
+    - action: ExportPara
+      paraText: AAS discovery interface
+      paraStyle: ListDash
+    - action: ExportSchema
+      skipIfVisited: true
+      includeSchemas: 
+      - AssetLink
+      - inline_response_200
       suppressSchemas: *suppressSchemaList
       suppressMembers:
   #
@@ -1416,7 +1449,7 @@ createWordFiles:
       paraText: Technology neutral definitions
       paraStyle: berschrift1
     - action: ExportPara
-      paraText: Query retrieval interface and interface operations
+      paraText: AAS query retrieval interface and interface operations
       paraStyle: berschrift2
     - action: ExportPara
       paraText: General
@@ -1474,7 +1507,7 @@ createWordFiles:
       paraStyle: NOTE
     # End of: Extra header for chapter
     - action: ExportPara
-      paraText: Query retrieval interface and interface operations
+      paraText: AAS query retrieval interface and interface operations
       paraStyle: berschrift2
     - action: ExportPara
       paraText: Overview
@@ -1497,7 +1530,7 @@ createWordFiles:
     skip: *skipReadOpenApi
     actions:
     - action: ExportPara
-      paraText: Serialization of additional data types for query interface operations
+      paraText: Serialization of additional data types for AAS query interface operations
       paraStyle: berschrift2
     - action: ExportPara
       paraText: The following sub sections depict the serialization of specific data types required as input and output data of interface operations. In particular, the serialization into JSON data interchange syntax (ISO/ IEC 21778:2017) is targeted.

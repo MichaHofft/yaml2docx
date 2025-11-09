@@ -208,6 +208,7 @@ namespace Yaml2Docx
             public string SchemaHeadingPrefix = "TBD";
             public string SchemaBody = "TBD";
 
+            public string HttpTableCaptionPrefix = "TBD";
             public string SchemaTableCaptionPrefix = "TBD";
             public string PatternTableCaptionPrefix = "TBD";
 
