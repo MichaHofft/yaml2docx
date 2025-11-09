@@ -945,7 +945,7 @@ namespace Yaml2Docx
                 return;
 
             // generate a table-reference
-            var substTablRef = new Substitution("table-ref", $"Table{_tableRefIdCount++}", isBookmark: true);
+            var substTablRef = new Substitution("table-ref", $"Figure{_tableRefIdCount++}", isBookmark: true);
             var substs = new List<Substitution>() { substTablRef };
 
             // Heading

@@ -7,7 +7,7 @@ noteStyle: NOTE
 tableCaptionStyle: TABLE-title
 yamlHeadingStyle: berschrift3
 yamlCodeStyle: YamlMono
-grammarHeadingStyle: berschrift3
+grammarHeadingStyle: berschrift4
 grammarCodeStyle: SourceCode
 grammarCodeFontSize: 7
 grammarCodeTargetWidthCm: 16
@@ -74,7 +74,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: &anchorOutputFormat "console svg"
       heading: "Grammar for rule based naming conventions of AAS interface operations"
-      body: "Table %table-ref% shows the rules, which form the different names of AAS interface operations in this standard."
+      body: "Figure %table-ref% shows the rules, which form the different names of AAS interface operations in this standard."
       cropBottomCm: 1
       parts:
       - InterfaceOperation
@@ -93,7 +93,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: &anchorOutputFormat "console svg"
       heading: "Root of the grammar for AAS queries and AAS access rules"
-      body: "Table %table-ref% shows the rule, which form the root of the the grammar for AAS queries and AAS access rules."
+      body: "Figure %table-ref% shows the rule, which form the root of the the grammar for AAS queries and AAS access rules."
       targetWidthCm: 8
       cropBottomCm: 1.5
       parts:
@@ -101,7 +101,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Logical expressions"
-      body: "Table %table-ref% shows the rules, which form logical expressions. These may rely on comparisions, boolean constants and white space (see below)."
+      body: "Figure %table-ref% shows the rules, which form logical expressions. These may rely on comparisons, boolean constants and white space (see below)."
       cropBottomCm: 1
       parts:
       - Query
@@ -114,7 +114,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Match expressions and comparisons"
-      body: "Table %table-ref% shows the rules, which form matches and comparisons between operands of different data types. These operands may be the results of further expressions and literal values (see below)."
+      body: "Figure %table-ref% shows the rules, which form matches and comparisons between operands of different data types. These operands may be the results of further expressions and literal values (see below)."
       fontSize: 6
       cropBottomCm: 1
       parts:
@@ -130,7 +130,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Operands"
-      body: "Table %table-ref% shows operands of different data types. Operands might also be expressed as results of value casting operations."
+      body: "Figure %table-ref% shows operands of different data types. Operands might also be expressed as results of value casting operations."
       cropBottomCm: 1.5
       parts:
       - Operand
@@ -143,7 +143,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Casting operations"
-      body: "Table %table-ref% shows casting operations for different data types."
+      body: "Figure %table-ref% shows casting operations for different data types."
       targetWidthCm: 12
       cropBottomCm: 1.1
       parts:
@@ -156,7 +156,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Numerical and boolean literals, whitespace"
-      body: "Table %table-ref% shows several rules for the definition of numerical and boolean literals, as well as the universal handling of whitespace for all rules."
+      body: "Figure %table-ref% shows several rules for the definition of numerical and boolean literals, as well as the universal handling of whitespace for all rules."
       cropBottomCm: 1.3
       parts:
       - Ws
@@ -169,7 +169,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "String literals"
-      body: "Table %table-ref% shows several rules for the definition of string literals."
+      body: "Figure %table-ref% shows several rules for the definition of string literals."
       cropBottomCm: 1.5
       parts:
       - UpperAtoZ
@@ -179,7 +179,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Date and time literals"
-      body: "Table %table-ref% shows several rules for the definition of date and time literals."
+      body: "Figure %table-ref% shows several rules for the definition of date and time literals."
       fontSize: 5.5
       cropBottomCm: 1.1
       parts:
@@ -199,7 +199,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of AAS elements and attributes"
-      body: "Table %table-ref% shows several rules allowing building expressions of fields of AAS specific elements and specific attributes."
+      body: "Figure %table-ref% shows several rules allowing building expressions of fields of AAS specific elements and specific attributes."
       cropBottomCm: 1
       parts:
       - FieldIdentifier
@@ -211,7 +211,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Serializations of AAS attributes for identifiers of fields"
-      body: "Table %table-ref% shows several rules for specifying serializations of AAS attributes for identifiers of fields."
+      body: "Figure %table-ref% shows several rules for specifying serializations of AAS attributes for identifiers of fields."
       cropBottomCm: 1
       parts:
       - ReferenceClause
@@ -222,7 +222,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Identifiers of fields of references to AAS elements and attributes"
-      body: "Table %table-ref% shows several rules allowing building expressions of fields of references of AAS elements, named descriptors for AAS and Submodels."
+      body: "Figure %table-ref% shows several rules allowing building expressions of fields of references of AAS elements, named descriptors for AAS and Submodels."
       notes:
       - "For compatibility with known implementations, so called descriptors for AAS, Submodels and so call ConceptDescriptions are already introduced."
       cropBottomCm: 1
@@ -234,7 +234,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Formulation of access and permission rules"
-      body: "Table %table-ref% shows several grammar rules allowing building AAS access and permissions rules. On top level, also default for these rules will be expressed. Filters are applied, if required."
+      body: "Figure %table-ref% shows several grammar rules allowing building AAS access and permissions rules. On top level, also default for these rules will be expressed. Filters are applied, if required."
       cropBottomCm: 0.7
       parts:
       - AllAccessDefAttributes
@@ -251,7 +251,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Formulation of access control lists (ACL)"
-      body: "Table %table-ref% shows several rules allowing expressing access control lists (ACL) based on specified attributes (see next section)."
+      body: "Figure %table-ref% shows several rules allowing expressing access control lists (ACL) based on specified attributes (see next section)."
       cropBottomCm: 1
       parts:
       - AclAttributes
@@ -262,7 +262,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Formulation of ACL attributes"
-      body: "Table %table-ref% shows several rules allowing expressing attributes for access control lists (ACL)."
+      body: "Figure %table-ref% shows several rules allowing expressing attributes for access control lists (ACL)."
       cropBottomCm: 1
       parts:
       - SingleAttribute
@@ -274,7 +274,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Formulation of object specifications for ACLs and attributes"
-      body: "Table %table-ref% shows several rules allowing expressing object specifications for access control lists (ACL)."
+      body: "Figure %table-ref% shows several rules allowing expressing object specifications for access control lists (ACL)."
       cropBottomCm: 1.5
       parts:
       - SingleObject
@@ -290,7 +290,7 @@ createWordFiles:
     - action: ExportGrammar
       outputFormat: *anchorOutputFormat
       heading: "Literals for AAS access rules"
-      body: "Table %table-ref% shows the definitions of literals for specifying AAS access rules."
+      body: "Figure %table-ref% shows the definitions of literals for specifying AAS access rules."
       notes:
       - "For this edition of the standard, the literals are all based on StringLiteral."
       targetWidthCm: 7
@@ -337,6 +337,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsAAS
       GetAssetAdministrationShell:
@@ -445,6 +451,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSM1
       GetSubmodelById:
@@ -507,6 +519,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSM2
       GetFileByPath:
@@ -542,6 +560,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSM3
       GetSubmodelElementByPath:
@@ -610,6 +634,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations for this subsection, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSM4
       InvokeOperationSync:
@@ -648,6 +678,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsAasRepo
       GetAllAssetAdministrationShells:
@@ -699,6 +735,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Submodel repository, which are then explained in the following subsections including details such as expected input and output parameters. The format of the tables in this section are described in Annex A.
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSubmodelRepo
       GetAllSubmodels:
@@ -763,6 +805,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsAasReg
       GetAllAssetAdministrationShellDescriptors:
@@ -815,6 +863,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsSubmodelReg
       GetAllSubmodelDescriptors:
@@ -870,6 +924,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations of the Asset Administration Shell, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsAasDisc
       SearchAllAssetAdministrationShellIdsByAssetLink:
@@ -1371,6 +1431,12 @@ createWordFiles:
       paraText: Table %table-ref% provides an overview of the interface operations for query retrieval, which are then explained in the following subsections including details such as expected input and output parameters.  
       paraStyle: Normal
     - action: ExportOverview
+    - action: ExportPara
+      paraText: Detailed interface operations
+      paraStyle: berschrift3
+    - action: ExportPara
+      paraText: The following sub sections provide the details for the interface operations in this section.  
+      paraStyle: Normal
     - action: ExportTables
     useOperations: &anchorIfcOpsQuery
       GetAssetAdministrationShellsByQuery:
